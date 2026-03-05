@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+.env.*
+.venv/
+venv/
+
+# ML artifacts
+mlruns/
+wandb/
+models/checkpoints/
+models/exported/
+memory/chroma_store/
+
+# Data (track with DVC, not git)
+data/raw/*.csv
+data/raw/*.parquet
+data/processed/
+data/features/
+
+# Reports (generated, not tracked)
+reports/eda/*.png
+reports/eda/*.json
+reports/fairness/*.json
+reports/explainability/*.png
+reports/kaizen_log.jsonl
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / PII
+credentials.json
+*.pem
+*.key

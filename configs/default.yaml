@@ -1,0 +1,60 @@
+# Tones and Bones — ML System Configuration
+project:
+  name: "tones-and-bones"
+  goal: "Build and deploy a production-grade luxury sales and marketing automation ML system"
+  milestones:
+    - "Data pipeline and EDA complete"
+    - "Baseline model trained and evaluated"
+    - "Bias/fairness audit passed"
+    - "Explainability reports generated"
+    - "Model optimized and compressed for production"
+    - "API deployed with monitoring"
+
+seed: 42
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  features_dir: "data/features"
+  max_unconfirmed_size_gb: 1.0
+
+training:
+  framework: "pytorch-lightning"
+  max_epochs: 50
+  batch_size: 64
+  learning_rate: 0.001
+  early_stopping_patience: 5
+  precision: "16-mixed"
+  accelerator: "auto"
+  devices: "auto"
+  gradient_clip_val: 1.0
+
+model:
+  checkpoint_dir: "models/checkpoints"
+  export_dir: "models/exported"
+  compression:
+    quantize: true
+    prune: false
+    target_inference_ms: 100
+
+experiment_tracking:
+  backend: "mlflow"  # mlflow | wandb
+  mlflow_uri: "mlruns"
+  wandb_project: "tones-and-bones"
+
+memory:
+  backend: "chromadb"
+  persist_dir: "memory/chroma_store"
+  embedding_model: "all-MiniLM-L6-v2"
+  collection_name: "session_memory"
+
+evaluation:
+  kaizen_log: "reports/kaizen_log.jsonl"
+  fairness_report_dir: "reports/fairness"
+  explainability_report_dir: "reports/explainability"
+  eda_report_dir: "reports/eda"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1
