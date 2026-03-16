@@ -9,18 +9,22 @@ from typing import Any
 import torch
 import torch.nn as nn
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 # ── Request / Response Schemas ──────────────────────────────────────────
 
 class PredictRequest(BaseModel):
-    features: list[float] = Field(..., min_length=1, description="Input feature vector")
+    features: list[float] | None = Field(None, description="Input feature vector")
+    input: str | None = Field(None, description="Text input for chat-style inference")
 
 
 class PredictResponse(BaseModel):
     prediction: float | list[float]
     inference_ms: float
     model_version: str
+    output: str | None = None
 
 
 class HealthResponse(BaseModel):
@@ -80,9 +84,23 @@ def create_app() -> FastAPI:
         )
 
     @app.post("/predict", response_model=PredictResponse)
+    @app.post("/api/predict", response_model=PredictResponse)
     def predict(req: PredictRequest) -> PredictResponse:
-        if _state.model is None:
+        if _state.model is None and req.features is not None:
             raise HTTPException(status_code=503, detail="Model not loaded")
+
+        # Chat-style text input (returns echo until a real NLP model is loaded)
+        if req.input is not None and req.features is None:
+            _state.request_count += 1
+            return PredictResponse(
+                prediction=0.0,
+                inference_ms=0.0,
+                model_version=_state.model_version,
+                output=f"Received: {req.input}",
+            )
+
+        if req.features is None:
+            raise HTTPException(status_code=422, detail="Provide 'features' or 'input'")
 
         tensor = torch.tensor([req.features], dtype=torch.float32)
         start = time.perf_counter()
@@ -113,6 +131,15 @@ def create_app() -> FastAPI:
             return {"status": "loaded", "model": _state.model_version}
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to load model: {e}")
+
+    # ── Serve Frontend ───────────────────────────────────────────────────
+    frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
+    if frontend_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(frontend_dir / "static")), name="static")
+
+        @app.get("/")
+        def serve_frontend() -> FileResponse:
+            return FileResponse(str(frontend_dir / "index.html"))
 
     return app
 

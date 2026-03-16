@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypnosis AI — Tones and Bones</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="static/css/hypnosis.css">
+</head>
+<body>
+
+    <!-- Background Glow -->
+    <div class="glow-orb top-left"></div>
+    <div class="glow-orb bottom-right"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar glass">
+        <div class="logo">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Hypnosis AI</span>
+        </div>
+        <div class="nav-links">
+            <button class="nav-btn" data-view="view-landing">Home</button>
+            <button class="nav-btn" data-view="view-builder">Create Guide</button>
+            <button class="nav-btn" data-view="view-chat">Chat</button>
+            <button class="primary-btn" data-view="view-builder">Get Started</button>
+        </div>
+    </nav>
+
+    <!-- App Container -->
+    <div id="app-container">
+
+        <!-- 1. Landing View -->
+        <section id="view-landing" class="view active">
+            <div class="hero">
+                <h1>Your Personal <span>AI Guide</span></h1>
+                <p>Experience deep, calming conversations with an AI companion crafted to guide you through relaxation, focus, and self-discovery.</p>
+                <div class="hero-cta">
+                    <button class="primary-btn btn-large pulse-glow" data-view="view-builder">
+                        <i class="fa-solid fa-sparkles"></i> Create Your Guide
+                    </button>
+                    <button class="btn-outline btn-large" data-view="view-chat">
+                        <i class="fa-solid fa-comment"></i> Try a Session
+                    </button>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card glass hover-lift">
+                    <i class="fa-solid fa-brain"></i>
+                    <h3>Adaptive Intelligence</h3>
+                    <p>Your guide learns your preferences and adapts its approach for deeply personalized sessions.</p>
+                </div>
+                <div class="feature-card glass hover-lift">
+                    <i class="fa-solid fa-headphones"></i>
+                    <h3>Immersive Audio</h3>
+                    <p>Neural voice synthesis creates soothing, natural speech that guides you into focused states.</p>
+                </div>
+                <div class="feature-card glass hover-lift">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h3>Private &amp; Secure</h3>
+                    <p>End-to-end encryption ensures your sessions remain completely private and confidential.</p>
+                </div>
+            </div>
+
+            <div class="pricing-section glass">
+                <h2>Premium Access</h2>
+                <div class="price">
+                    <span>$19</span> /month
+                </div>
+                <ul class="features-list">
+                    <li><i class="fa-solid fa-check"></i> Unlimited AI sessions</li>
+                    <li><i class="fa-solid fa-check"></i> Custom guide creation</li>
+                    <li><i class="fa-solid fa-check"></i> Neural voice synthesis</li>
+                    <li><i class="fa-solid fa-check"></i> Session history &amp; insights</li>
+                    <li><i class="fa-solid fa-check"></i> Priority support</li>
+                </ul>
+                <button class="primary-btn btn-large w-full pulse-glow">Start Free Trial</button>
+            </div>
+        </section>
+
+        <!-- 2. Character Builder View -->
+        <section id="view-builder" class="view">
+            <div class="builder-layout">
+                <div class="builder-panel glass">
+                    <h2>Create Your Guide</h2>
+                    <p class="subtext">Design an AI companion tailored to your needs.</p>
+
+                    <div class="input-group">
+                        <label>Guide Name</label>
+                        <input type="text" id="guide-name" placeholder="e.g. Serenity">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Personality</label>
+                        <select id="guide-personality">
+                            <option value="calm">Calm &amp; Soothing</option>
+                            <option value="wise">Wise &amp; Philosophical</option>
+                            <option value="energetic">Energetic &amp; Motivating</option>
+                            <option value="nurturing">Nurturing &amp; Empathetic</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Voice Style</label>
+                        <div class="avatar-selector" id="voice-selector">
+                            <button class="avatar-btn active" data-voice="ethereal">Ethereal</button>
+                            <button class="avatar-btn" data-voice="deep">Deep</button>
+                            <button class="avatar-btn" data-voice="warm">Warm</button>
+                            <button class="avatar-btn" data-voice="whisper">Whisper</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Guidance Depth</label>
+                        <div class="slider-group">
+                            <input type="range" id="depth-slider" min="1" max="10" value="7">
+                        </div>
+                    </div>
+
+                    <button class="primary-btn btn-large w-full" id="btn-create-guide">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Bring to Life
+                    </button>
+                </div>
+
+                <div class="preview-panel glass">
+                    <div class="preview-card">
+                        <div class="avatar-frame shimmer">
+                            <div class="placeholder"><i class="fa-solid fa-user-astronaut"></i></div>
+                        </div>
+                        <h2 id="preview-name">Your Guide</h2>
+                        <p id="preview-traits">Calm &bull; Ethereal &bull; Depth 7</p>
+                        <div class="cost-badge">
+                            <i class="fa-solid fa-coins"></i>
+                            <span>Included with Premium</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Chat View -->
+        <section id="view-chat" class="view">
+            <div class="chat-layout">
+                <aside class="chat-sidebar glass">
+                    <h3>Your Guides</h3>
+                    <ul class="guide-list" id="guide-list">
+                        <li class="guide-item active">
+                            <div class="guide-avatar">
+                                <i class="fa-solid fa-user-astronaut" style="font-size:2rem;color:var(--primary-solid);padding:0.5rem;"></i>
+                            </div>
+                            <div class="guide-info">
+                                <h4>Serenity</h4>
+                                <span>Calm &bull; Ethereal</span>
+                            </div>
+                        </li>
+                    </ul>
+                </aside>
+
+                <main class="chat-main glass">
+                    <div class="chat-header">
+                        <div class="current-guide">
+                            <i class="fa-solid fa-wand-magic-sparkles primary-text"></i>
+                            <h3 id="chat-guide-name">Serenity</h3>
+                        </div>
+                        <div class="token-display">
+                            <i class="fa-solid fa-coins primary-text"></i>
+                            <span id="token-count">Unlimited</span>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message assistant">
+                            <div class="msg-bubble">
+                                Welcome. Take a deep breath. I'm here to guide you through whatever you need today. What would you like to explore?
+                                <button class="play-audio-btn btn-icon" title="Play audio">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <form id="chat-form">
+                            <button type="button" class="btn-icon" title="Voice input">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                            <input type="text" id="chat-input" placeholder="Type your message..." autocomplete="off">
+                            <button type="submit" class="btn-icon primary-text" title="Send">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                </main>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="static/js/app.js"></script>
+</body>
+</html>
