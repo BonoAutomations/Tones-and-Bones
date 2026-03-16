@@ -13,35 +13,36 @@ async function main(): Promise<void> {
     validateConfig(AGENT_CONFIG);
   } catch (error) {
     logger.error(`Configuration error: ${String(error)}`);
-    logger.error("Please check your .env file and ensure all required variables are set.");
+    logger.error("Copy .env.example → .env and fill in all required keys.");
     process.exit(1);
   }
 
   const agent = new CashClawAgent(AGENT_CONFIG);
 
-  // Graceful shutdown
   const shutdown = async (signal: string): Promise<void> => {
-    logger.info(`Received ${signal}, shutting down gracefully...`);
+    logger.info(`Received ${signal} — graceful shutdown...`);
     await agent.stop();
     const stats = agent.getStats();
-    logger.info("Final stats:", stats);
+    logger.info("Final stats", stats);
     process.exit(0);
   };
 
   process.on("SIGINT", () => shutdown("SIGINT"));
   process.on("SIGTERM", () => shutdown("SIGTERM"));
 
-  // Log stats periodically
+  // Periodic stats log
   setInterval(() => {
-    const stats = agent.getStats();
-    const active = agent.getActiveTasks();
-    logger.info(`[Stats] Completed: ${stats.tasksCompleted} | Failed: ${stats.tasksFailed} | ETH Earned: ${stats.totalEthEarned} | Active: ${active.length}`);
+    const s = agent.getStats();
+    const a = agent.getActiveTasks().length;
+    logger.info(
+      `[Heartbeat] Done:${s.tasksCompleted} Failed:${s.tasksFailed} ETH:${s.totalEthEarned} Active:${a}`
+    );
   }, 60000);
 
   await agent.start();
 }
 
 main().catch((error) => {
-  logger.error("Fatal error:", { error });
+  logger.error("Fatal startup error", { error });
   process.exit(1);
 });
