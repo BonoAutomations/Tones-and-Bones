@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import { Product, PRODUCTS } from "./products";
+import { PRODUCTS } from "./products";
 import { logger } from "../utils/logger";
 
 export interface WhopOrder {
@@ -28,38 +28,10 @@ export class WhopClient {
     });
   }
 
-  /** Sync the canonical PRODUCTS catalog to WHOP */
-  async syncProducts(): Promise<void> {
-    for (const product of PRODUCTS) {
-      try {
-        await this.upsertProduct(product);
-        logger.info(`[WHOP] Synced product: ${product.name}`);
-      } catch (error) {
-        logger.error(`[WHOP] Failed to sync ${product.id}`, { error });
-      }
-    }
-  }
-
-  private async upsertProduct(product: Product): Promise<void> {
-    const payload = {
-      name: product.name,
-      description: product.description,
-      price: product.priceUsd * 100, // cents
-      billing_period: product.billingPeriod ?? null,
-      visibility: "visible",
-      metadata: { asam_id: product.id, eth_price: product.priceEth },
-    };
-
-    if (product.whopProductId) {
-      await this.http.patch(`/products/${product.whopProductId}`, payload);
-    } else {
-      await this.http.post("/products", {
-        ...payload,
-        company_id: this.companyId,
-      });
-    }
-  }
-
+  /**
+   * READ-ONLY: fetch live order data from the Whop store.
+   * No writes to the store — manage products manually at whop.com/real-estate-automations.
+   */
   async fetchOrders(limit = 50): Promise<WhopOrder[]> {
     try {
       const response = await this.http.get("/memberships", {
@@ -96,7 +68,7 @@ export class WhopClient {
     return {
       id: String(raw.id),
       productId: String(raw.plan_id ?? ""),
-      customerEmail: String(raw.user?.email ?? ""),
+      customerEmail: String((raw.user as Record<string, unknown>)?.email ?? ""),
       amountUsd: Number(raw.price_paid ?? 0) / 100,
       status: raw.status as WhopOrder["status"],
       createdAt: String(raw.created_at ?? new Date().toISOString()),

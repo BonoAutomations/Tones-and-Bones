@@ -16,17 +16,17 @@ export interface DashboardMetrics {
   };
   revenue: {
     ethEarned: string;
-    usdEarned: number;
     monthlyUsd: number;
     whopOrders: number;
+    stripeMode: "test" | "live";
   };
   social: {
     tweetsPosted: number;
-    scheduledNext: string;
+    xApiStatus: "active" | "depleted" | "manual";
     engagementReplies: number;
   };
   leads: {
-    scraped: number;
+    total: number;
     scored: number;
     qualified: number;
     nurtured: number;
@@ -36,15 +36,39 @@ export interface DashboardMetrics {
     lastStudied: string;
     topicsResearched: number;
   };
+  pantheon: {
+    connected: boolean;
+    pendingDirectives: number;
+    lastHeartbeat: string;
+  };
+  scaling: {
+    currentPhase: number;
+    phaseName: string;
+    kpiProgress: number;
+    kpiTarget: number;
+    kpiUnit: string;
+    kpiPercent: number;
+    pendingMilestones: string[];
+  };
 }
 
 let metricsStore: DashboardMetrics = {
   agent: { id: "PENDING", status: "running", uptime: 0, lastActive: new Date().toISOString() },
   tasks: { active: 0, completed: 0, failed: 0, declined: 0 },
-  revenue: { ethEarned: "0", usdEarned: 0, monthlyUsd: 0, whopOrders: 0 },
-  social: { tweetsPosted: 0, scheduledNext: "", engagementReplies: 0 },
-  leads: { scraped: 0, scored: 0, qualified: 0, nurtured: 0 },
+  revenue: { ethEarned: "0", monthlyUsd: 0, whopOrders: 0, stripeMode: "test" },
+  social: { tweetsPosted: 0, xApiStatus: "depleted", engagementReplies: 0 },
+  leads: { total: 0, scored: 0, qualified: 0, nurtured: 0 },
   learning: { studySessions: 0, lastStudied: "", topicsResearched: 0 },
+  pantheon: { connected: false, pendingDirectives: 0, lastHeartbeat: "" },
+  scaling: {
+    currentPhase: 1,
+    phaseName: "Lock San Diego",
+    kpiProgress: 0,
+    kpiTarget: 10,
+    kpiUnit: "customers",
+    kpiPercent: 0,
+    pendingMilestones: [],
+  },
 };
 
 const startTime = Date.now();
@@ -65,37 +89,52 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="refresh" content="30">
-<title>ASAM CashClaw Dashboard</title>
+<title>ASAM CashClaw — Unified Command</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #0d0d0f; color: #e0e0e0; }
-  header { background: #1a1a2e; padding: 16px 32px; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; gap: 12px; }
+  header { background: linear-gradient(135deg,#0f0c29,#302b63,#24243e); padding: 16px 32px; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; justify-content: space-between; }
   header h1 { font-size: 1.4rem; color: #00d4ff; }
-  header span { font-size: 0.8rem; color: #888; }
+  header .subtitle { font-size: 0.75rem; color: #888; }
+  header .pantheon-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; background: {{PANTHEON_BG}}; color: {{PANTHEON_COLOR}}; }
+  .phase-banner { background: #1a1a2e; border-bottom: 2px solid #01696F; padding: 10px 32px; display: flex; align-items: center; gap: 20px; }
+  .phase-banner .phase-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+  .phase-banner .phase-name { font-size: 1rem; font-weight: 700; color: #00d4ff; }
+  .phase-banner .progress-bar { flex: 1; background: #0d0d0f; border-radius: 4px; height: 8px; overflow: hidden; }
+  .phase-banner .progress-fill { height: 100%; background: linear-gradient(90deg,#00ff87,#00d4ff); border-radius: 4px; width: {{KPI_PERCENT}}%; }
+  .phase-banner .kpi-text { font-size: 0.8rem; color: #aaa; white-space: nowrap; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 24px 32px; }
   .card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 20px; }
+  .card.highlight { border-color: #01696F; }
   .card h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 16px; }
   .metric { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .metric .label { font-size: 0.85rem; color: #aaa; }
-  .metric .value { font-size: 1rem; font-weight: 600; color: #e0e0e0; }
-  .value.green { color: #00ff87; }
-  .value.yellow { color: #ffd700; }
-  .value.red { color: #ff4d4d; }
-  .value.blue { color: #00d4ff; }
+  .metric .value { font-size: 1rem; font-weight: 600; }
+  .green { color: #00ff87; } .yellow { color: #ffd700; } .red { color: #ff4d4d; } .blue { color: #00d4ff; } .gray { color: #666; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-  .dot-green { background: #00ff87; box-shadow: 0 0 6px #00ff87; }
-  .dot-yellow { background: #ffd700; }
-  .dot-red { background: #ff4d4d; }
+  .dot-green { background: #00ff87; box-shadow: 0 0 6px #00ff87; } .dot-yellow { background: #ffd700; } .dot-red { background: #ff4d4d; } .dot-blue { background: #00d4ff; box-shadow: 0 0 6px #00d4ff; }
+  .milestones { margin-top: 8px; }
+  .milestone { font-size: 0.78rem; padding: 3px 0; color: #aaa; }
+  .milestone::before { content: "◯ "; color: #ffd700; }
   footer { text-align: center; padding: 16px; font-size: 0.75rem; color: #555; }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>⚡ ASAM CashClaw</h1>
-    <span>Autonomous Revenue Agent · San Diego County</span>
+    <h1>⚡ ASAM CashClaw — Unified Command</h1>
+    <span class="subtitle">Autonomous Revenue Agent · San Diego County · Part of the 46-agent Brain Series</span>
   </div>
+  <span class="pantheon-badge">Pantheon: {{PANTHEON_STATUS}}</span>
 </header>
+<div class="phase-banner">
+  <div>
+    <div class="phase-label">Scaling Phase {{PHASE_ID}} of 5</div>
+    <div class="phase-name">{{PHASE_NAME}}</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill"></div></div>
+  <div class="kpi-text">{{KPI_PROGRESS}} / {{KPI_TARGET}} {{KPI_UNIT}} ({{KPI_PERCENT}}%)</div>
+</div>
 <div class="grid">
   <div class="card">
     <h2>Agent Status</h2>
@@ -103,6 +142,13 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <div class="metric"><span class="label">Agent ID</span><span class="value blue">{{AGENT_ID}}</span></div>
     <div class="metric"><span class="label">Uptime</span><span class="value">{{UPTIME}}</span></div>
     <div class="metric"><span class="label">Last Active</span><span class="value">{{LAST_ACTIVE}}</span></div>
+  </div>
+  <div class="card highlight">
+    <h2>Pantheon Bridge</h2>
+    <div class="metric"><span class="label">PaperClip</span><span class="value {{PANTHEON_COLOR_CLASS}}"><span class="status-dot {{PANTHEON_DOT}}"></span>{{PANTHEON_STATUS}}</span></div>
+    <div class="metric"><span class="label">Pending Directives</span><span class="value {{DIRECTIVES_COLOR}}">{{PENDING_DIRECTIVES}}</span></div>
+    <div class="metric"><span class="label">Last Heartbeat</span><span class="value">{{LAST_HB}}</span></div>
+    <div class="metric"><span class="label">Reports to</span><span class="value blue">Hermes (CFO)</span></div>
   </div>
   <div class="card">
     <h2>Task Performance</h2>
@@ -114,22 +160,22 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
   <div class="card">
     <h2>Revenue</h2>
     <div class="metric"><span class="label">ETH Earned</span><span class="value green">{{ETH_EARNED}} ETH</span></div>
-    <div class="metric"><span class="label">USD (all time)</span><span class="value green">${{USD_EARNED}}</span></div>
-    <div class="metric"><span class="label">USD (this month)</span><span class="value blue">${{MONTHLY_USD}}</span></div>
-    <div class="metric"><span class="label">WHOP Orders</span><span class="value">{{WHOP_ORDERS}}</span></div>
+    <div class="metric"><span class="label">USD (this month)</span><span class="value green">\${{MONTHLY_USD}}</span></div>
+    <div class="metric"><span class="label">Whop Orders</span><span class="value">{{WHOP_ORDERS}}</span></div>
+    <div class="metric"><span class="label">Stripe Mode</span><span class="value {{STRIPE_COLOR}}">{{STRIPE_MODE}}</span></div>
   </div>
   <div class="card">
-    <h2>Social Automation</h2>
+    <h2>Social Engine</h2>
     <div class="metric"><span class="label">Tweets Posted</span><span class="value">{{TWEETS}}</span></div>
-    <div class="metric"><span class="label">Next Post</span><span class="value blue">{{NEXT_POST}}</span></div>
+    <div class="metric"><span class="label">X API</span><span class="value {{X_COLOR}}">{{X_STATUS}}</span></div>
     <div class="metric"><span class="label">Replies Sent</span><span class="value">{{REPLIES}}</span></div>
   </div>
   <div class="card">
     <h2>Lead Pipeline</h2>
-    <div class="metric"><span class="label">Scraped</span><span class="value">{{SCRAPED}}</span></div>
+    <div class="metric"><span class="label">Total Leads</span><span class="value">{{TOTAL_LEADS}}</span></div>
     <div class="metric"><span class="label">AI Scored</span><span class="value blue">{{SCORED}}</span></div>
-    <div class="metric"><span class="label">Qualified (hot)</span><span class="value green">{{QUALIFIED}}</span></div>
-    <div class="metric"><span class="label">In Nurture</span><span class="value yellow">{{NURTURED}}</span></div>
+    <div class="metric"><span class="label">Hot Leads</span><span class="value green">{{QUALIFIED}}</span></div>
+    <div class="metric"><span class="label">Warm (nurture)</span><span class="value yellow">{{NURTURED}}</span></div>
   </div>
   <div class="card">
     <h2>Learning Engine</h2>
@@ -137,8 +183,12 @@ const HTML_TEMPLATE = `<!DOCTYPE html>
     <div class="metric"><span class="label">Last Studied</span><span class="value">{{LAST_STUDIED}}</span></div>
     <div class="metric"><span class="label">Topics Covered</span><span class="value blue">{{TOPICS}}</span></div>
   </div>
+  <div class="card">
+    <h2>Phase {{PHASE_ID}} — Open Milestones</h2>
+    <div class="milestones">{{MILESTONES_HTML}}</div>
+  </div>
 </div>
-<footer>ASAM CashClaw · Part of the 46-agent Brain Series · Auto-refreshes every 30s</footer>
+<footer>ASAM CashClaw · PaperClip Pantheon Arm · whop.com/real-estate-automations · Auto-refreshes every 30s</footer>
 </body>
 </html>`;
 
@@ -154,31 +204,57 @@ export function createDashboardServer(port = 3777): { start: () => void; stop: (
 
   app.get("/", (_req: Request, res: Response) => {
     const m = metricsStore;
+    const pantheonConnected = m.pantheon.connected;
+    const xStatusColor = m.social.xApiStatus === "active" ? "green" : m.social.xApiStatus === "depleted" ? "red" : "yellow";
+    const stripeLive = m.revenue.stripeMode === "live";
+
+    const milestonesHtml = m.scaling.pendingMilestones.length
+      ? m.scaling.pendingMilestones
+          .slice(0, 5)
+          .map((ms) => `<div class="milestone">${ms}</div>`)
+          .join("")
+      : '<div class="milestone" style="color:#00ff87">All milestones complete!</div>';
+
     const html = HTML_TEMPLATE
-      .replace("{{STATUS}}", m.agent.status)
-      .replace("{{AGENT_ID}}", m.agent.id.slice(0, 16))
-      .replace("{{UPTIME}}", formatUptime(Date.now() - startTime))
-      .replace("{{LAST_ACTIVE}}", new Date(m.agent.lastActive).toLocaleTimeString())
-      .replace("{{ACTIVE_TASKS}}", String(m.tasks.active))
-      .replace("{{COMPLETED}}", String(m.tasks.completed))
-      .replace("{{FAILED}}", String(m.tasks.failed))
-      .replace("{{DECLINED}}", String(m.tasks.declined))
-      .replace("{{ETH_EARNED}}", m.revenue.ethEarned)
-      .replace("{{USD_EARNED}}", m.revenue.usdEarned.toFixed(2))
-      .replace("{{MONTHLY_USD}}", m.revenue.monthlyUsd.toFixed(2))
-      .replace("{{WHOP_ORDERS}}", String(m.revenue.whopOrders))
-      .replace("{{TWEETS}}", String(m.social.tweetsPosted))
-      .replace("{{NEXT_POST}}", m.social.scheduledNext || "Scheduled")
-      .replace("{{REPLIES}}", String(m.social.engagementReplies))
-      .replace("{{SCRAPED}}", String(m.leads.scraped))
-      .replace("{{SCORED}}", String(m.leads.scored))
-      .replace("{{QUALIFIED}}", String(m.leads.qualified))
-      .replace("{{NURTURED}}", String(m.leads.nurtured))
-      .replace("{{SESSIONS}}", String(m.learning.studySessions))
-      .replace("{{LAST_STUDIED}}", m.learning.lastStudied
-        ? new Date(m.learning.lastStudied).toLocaleTimeString()
-        : "—")
-      .replace("{{TOPICS}}", String(m.learning.topicsResearched));
+      .replace(/{{STATUS}}/g, m.agent.status)
+      .replace(/{{AGENT_ID}}/g, m.agent.id.slice(0, 20))
+      .replace(/{{UPTIME}}/g, formatUptime(Date.now() - startTime))
+      .replace(/{{LAST_ACTIVE}}/g, new Date(m.agent.lastActive).toLocaleTimeString())
+      .replace(/{{PANTHEON_STATUS}}/g, pantheonConnected ? "CONNECTED" : "STANDALONE")
+      .replace(/{{PANTHEON_BG}}/g, pantheonConnected ? "#003300" : "#1a1a00")
+      .replace(/{{PANTHEON_COLOR}}/g, pantheonConnected ? "#00ff87" : "#ffd700")
+      .replace(/{{PANTHEON_COLOR_CLASS}}/g, pantheonConnected ? "green" : "yellow")
+      .replace(/{{PANTHEON_DOT}}/g, pantheonConnected ? "dot-green" : "dot-yellow")
+      .replace(/{{PENDING_DIRECTIVES}}/g, String(m.pantheon.pendingDirectives))
+      .replace(/{{DIRECTIVES_COLOR}}/g, m.pantheon.pendingDirectives > 0 ? "yellow" : "gray")
+      .replace(/{{LAST_HB}}/g, m.pantheon.lastHeartbeat ? new Date(m.pantheon.lastHeartbeat).toLocaleTimeString() : "—")
+      .replace(/{{ACTIVE_TASKS}}/g, String(m.tasks.active))
+      .replace(/{{COMPLETED}}/g, String(m.tasks.completed))
+      .replace(/{{FAILED}}/g, String(m.tasks.failed))
+      .replace(/{{DECLINED}}/g, String(m.tasks.declined))
+      .replace(/{{ETH_EARNED}}/g, m.revenue.ethEarned)
+      .replace(/{{MONTHLY_USD}}/g, m.revenue.monthlyUsd.toFixed(2))
+      .replace(/{{WHOP_ORDERS}}/g, String(m.revenue.whopOrders))
+      .replace(/{{STRIPE_MODE}}/g, m.revenue.stripeMode.toUpperCase())
+      .replace(/{{STRIPE_COLOR}}/g, stripeLive ? "green" : "yellow")
+      .replace(/{{TWEETS}}/g, String(m.social.tweetsPosted))
+      .replace(/{{X_STATUS}}/g, m.social.xApiStatus.toUpperCase())
+      .replace(/{{X_COLOR}}/g, xStatusColor)
+      .replace(/{{REPLIES}}/g, String(m.social.engagementReplies))
+      .replace(/{{TOTAL_LEADS}}/g, String(m.leads.total))
+      .replace(/{{SCORED}}/g, String(m.leads.scored))
+      .replace(/{{QUALIFIED}}/g, String(m.leads.qualified))
+      .replace(/{{NURTURED}}/g, String(m.leads.nurtured))
+      .replace(/{{SESSIONS}}/g, String(m.learning.studySessions))
+      .replace(/{{LAST_STUDIED}}/g, m.learning.lastStudied ? new Date(m.learning.lastStudied).toLocaleTimeString() : "—")
+      .replace(/{{TOPICS}}/g, String(m.learning.topicsResearched))
+      .replace(/{{PHASE_ID}}/g, String(m.scaling.currentPhase))
+      .replace(/{{PHASE_NAME}}/g, m.scaling.phaseName)
+      .replace(/{{KPI_PROGRESS}}/g, String(m.scaling.kpiProgress))
+      .replace(/{{KPI_TARGET}}/g, String(m.scaling.kpiTarget))
+      .replace(/{{KPI_UNIT}}/g, m.scaling.kpiUnit)
+      .replace(/{{KPI_PERCENT}}/g, String(m.scaling.kpiPercent))
+      .replace(/{{MILESTONES_HTML}}/g, milestonesHtml);
 
     res.send(html);
   });
@@ -199,8 +275,6 @@ export function createDashboardServer(port = 3777): { start: () => void; stop: (
         logger.info(`[Dashboard] Live at http://localhost:${port}`);
       });
     },
-    stop: () => {
-      server?.close();
-    },
+    stop: () => { server?.close(); },
   };
 }

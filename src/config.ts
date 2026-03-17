@@ -37,7 +37,7 @@ export const AGENT_CONFIG: AgentConfig = {
   ],
   autoQuote: true,
   autoWork: true,
-  maxConcurrentTasks: 5,
+  maxConcurrentTasks: 3,
   maxLoopTurns: 10,
   declineKeywords: [
     "illegal",

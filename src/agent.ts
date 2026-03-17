@@ -16,6 +16,8 @@ import { StripeRevenue } from "./revenue/stripe";
 import { LeadPipeline } from "./leads/pipeline";
 import { EthWallet } from "./wallet/eth";
 import { ContentBriefGenerator } from "./content/brief";
+import { PantheonClient, PantheonDirective } from "./pantheon/client";
+import { PhaseTracker } from "./scaling/phases";
 import {
   createDashboardServer,
   updateNestedMetrics,
@@ -33,6 +35,8 @@ export class CashClawAgent {
   private leads: LeadPipeline;
   private wallet: EthWallet;
   private contentGen: ContentBriefGenerator;
+  private pantheon: PantheonClient;
+  private phaseTracker: PhaseTracker;
   private dashboard: ReturnType<typeof createDashboardServer>;
 
   private activeTasks: Map<string, ActiveTask> = new Map();
@@ -50,6 +54,7 @@ export class CashClawAgent {
   private leadTimer?: NodeJS.Timeout;
   private contentTimer?: NodeJS.Timeout;
   private dashMetricsTimer?: NodeJS.Timeout;
+  private heartbeatTimer?: NodeJS.Timeout;
 
   constructor(config: AgentConfig) {
     this.config = config;
@@ -65,6 +70,8 @@ export class CashClawAgent {
     this.leads = new LeadPipeline(config);
     this.wallet = new EthWallet();
     this.contentGen = new ContentBriefGenerator(config);
+    this.pantheon = new PantheonClient();
+    this.phaseTracker = new PhaseTracker();
     this.dashboard = createDashboardServer(
       parseInt(process.env.DASHBOARD_PORT || "3777")
     );
@@ -85,6 +92,7 @@ export class CashClawAgent {
     logger.info("==============================================");
     logger.info("  ASAM CashClaw — Autonomous Revenue Agent   ");
     logger.info("  Powered by ASAM | San Diego County         ");
+    logger.info("  Agent ID: 32180 | moltlaunch.com/agent/32180");
     logger.info("==============================================");
     logger.info(`Agent ID: ${this.config.agentId}`);
 
@@ -102,42 +110,47 @@ export class CashClawAgent {
       logger.warn("Wallet balance is low — fund before accepting ETH tasks");
     }
 
-    // 3. Sync revenue products
-    if (this.whop) {
-      await this.whop.syncProducts().catch((e) =>
-        logger.warn("WHOP sync failed — check store status", { e })
-      );
-    }
+    // 3. Connect to PaperClip Pantheon (non-blocking — runs standalone if unreachable)
+    const pantheonConnected = await this.pantheon.connect();
+    updateNestedMetrics("pantheon", {
+      connected: pantheonConnected,
+      lastHeartbeat: pantheonConnected ? new Date().toISOString() : "",
+    });
+
+    // 4. Sync Stripe products (WHOP is read-only — managed at whop.com/real-estate-automations)
     if (this.stripe) {
       await this.stripe.syncProducts().catch((e) =>
         logger.warn("Stripe sync failed", { e })
       );
     }
 
-    // 4. Start X auto-poster
+    // 5. Start X auto-poster
     await this.poster.start();
 
-    // 5. Generate first content brief
+    // 6. Generate first content brief
     await this.contentGen.generateDailyBrief().catch(() =>
       logger.warn("Initial content brief failed")
     );
 
-    // 6. Start main task polling loop
+    // 7. Start main task polling loop
     await this.poll();
     this.schedulePolling();
 
-    // 7. Schedule learning sessions
+    // 8. Schedule Pantheon heartbeat (every 5 minutes)
+    this.schedulePantheonHeartbeat();
+
+    // 9. Schedule learning sessions
     if (this.config.learningEnabled) {
       this.scheduleStudy();
     }
 
-    // 8. Schedule lead pipeline runs (every 6 hours)
+    // 10. Schedule lead pipeline runs (every 6 hours)
     this.scheduleleadPipeline();
 
-    // 9. Schedule daily content brief (24h)
+    // 11. Schedule daily content brief (24h)
     this.scheduleContentBrief();
 
-    // 10. Keep dashboard metrics fresh
+    // 12. Keep dashboard metrics fresh (every 60s)
     this.scheduleDashboardSync();
 
     logger.info("CashClaw fully operational — all systems running");
@@ -154,6 +167,7 @@ export class CashClawAgent {
       this.leadTimer,
       this.contentTimer,
       this.dashMetricsTimer,
+      this.heartbeatTimer,
     ].forEach((t) => t && clearInterval(t));
     logger.info("CashClaw stopped");
   }
@@ -166,19 +180,30 @@ export class CashClawAgent {
     }, this.config.polling.intervalMs);
   }
 
+  private schedulePantheonHeartbeat(): void {
+    this.heartbeatTimer = setInterval(async () => {
+      if (!this.isRunning) return;
+      await this.pantheon.heartbeat(
+        this.stats,
+        Array.from(this.activeTasks.values()),
+        this.phaseTracker.getPhaseId()
+      );
+      updateNestedMetrics("pantheon", {
+        connected: this.pantheon.getConnectionStatus(),
+        lastHeartbeat: new Date().toISOString(),
+      });
+    }, 5 * 60 * 1000);
+  }
+
   private scheduleStudy(): void {
     this.studyTimer = setInterval(async () => {
       if (!this.isRunning) return;
-      const before = this.learner.getRecentInsights(1).length;
       await this.learner.study();
-      const after = this.learner.getRecentInsights(1).length;
-      if (after > before) {
-        updateNestedMetrics("learning", {
-          studySessions: this.learner.getRecentInsights(100).length,
-          lastStudied: new Date().toISOString(),
-          topicsResearched: this.learner.getRecentInsights(100).length,
-        });
-      }
+      updateNestedMetrics("learning", {
+        studySessions: this.learner.getRecentInsights(100).length,
+        lastStudied: new Date().toISOString(),
+        topicsResearched: this.learner.getRecentInsights(100).length,
+      });
     }, this.config.studyIntervalMs);
   }
 
@@ -192,9 +217,15 @@ export class CashClawAgent {
   private scheduleContentBrief(): void {
     this.contentTimer = setInterval(async () => {
       if (!this.isRunning) return;
-      await this.contentGen.generateDailyBrief().catch(() =>
-        logger.warn("Scheduled content brief failed")
-      );
+      const brief = await this.contentGen.generateDailyBrief().catch(() => null);
+      if (brief) {
+        await this.pantheon.pushContentBrief({
+          theme: brief.theme,
+          tweetThreads: brief.tweetThreads,
+          linkedInPost: brief.linkedInPost,
+          emailSubjectLines: brief.emailSubjectLines,
+        }).catch(() => {});
+      }
     }, 24 * 60 * 60 * 1000);
   }
 
@@ -211,6 +242,15 @@ export class CashClawAgent {
     const slots = this.config.maxConcurrentTasks - this.activeTasks.size;
     if (slots <= 0) return;
 
+    // Process Pantheon directives first
+    const directives = await this.pantheon.fetchDirectives();
+    if (directives.length > 0) {
+      updateNestedMetrics("pantheon", { pendingDirectives: directives.length });
+      for (const directive of directives) {
+        await this.processDirective(directive);
+      }
+    }
+
     try {
       const tasks = await this.marketplace.fetchOpenTasks();
       for (const task of tasks) {
@@ -220,6 +260,36 @@ export class CashClawAgent {
       }
     } catch (error) {
       logger.error("Poll cycle error", { error });
+    }
+  }
+
+  private async processDirective(directive: PantheonDirective): Promise<void> {
+    logger.info(
+      `[Pantheon] Processing directive ${directive.id} (${directive.type}) from ${directive.from}`
+    );
+
+    try {
+      switch (directive.type) {
+        case "phase_advance": {
+          const { milestone } = directive.payload as { milestone?: string };
+          if (milestone) this.phaseTracker.completeMilestone(milestone);
+          break;
+        }
+        case "shutdown":
+          logger.warn("[Pantheon] Shutdown directive received — stopping agent");
+          await this.stop();
+          break;
+        case "status_request":
+          // Heartbeat will handle this on next cycle
+          break;
+        default:
+          logger.info(`[Pantheon] Directive type "${directive.type}" noted`);
+      }
+
+      await this.pantheon.ackDirective(directive.id, "processed");
+      updateNestedMetrics("pantheon", { pendingDirectives: 0 });
+    } catch (error) {
+      logger.warn(`[Pantheon] Failed to process directive ${directive.id}`, { error });
     }
   }
 
@@ -254,14 +324,15 @@ export class CashClawAgent {
   }
 
   private async workOnTask(task: MarketplaceTask): Promise<void> {
+    const priceEth = calculatePrice(
+      task,
+      this.config.pricing.baseRateEth,
+      this.config.pricing.maxRateEth
+    );
     const quote: TaskQuote = {
       taskId: task.id,
       agentId: this.config.agentId,
-      priceEth: calculatePrice(
-        task,
-        this.config.pricing.baseRateEth,
-        this.config.pricing.maxRateEth
-      ),
+      priceEth,
       estimatedDelivery: estimateDelivery(task),
       proposal: "",
       createdAt: new Date().toISOString(),
@@ -281,7 +352,18 @@ export class CashClawAgent {
       const ok = await this.marketplace.submitResult(result);
       if (ok) {
         this.stats.tasksCompleted++;
-        this.accumulateEarnings(quote.priceEth);
+        this.accumulateEarnings(priceEth);
+
+        // Report revenue to Hermes (CFO) via Pantheon
+        await this.pantheon.reportRevenue({
+          source: "moltlaunch",
+          amountEth: priceEth,
+          taskId: task.id,
+        });
+
+        // Update phase tracker with latest ETH earnings
+        this.phaseTracker.updateMetrics(this.stats.tasksCompleted, 0);
+        this.syncScalingMetrics();
       }
     } catch (error) {
       this.stats.tasksFailed++;
@@ -296,13 +378,28 @@ export class CashClawAgent {
 
   private async runLeadPipeline(): Promise<void> {
     logger.info("[Leads] Running scheduled lead pipeline...");
-    await this.leads.scrapeFromApify({
-      query: "AI sales automation CRM #SalesTech",
-      platform: "twitter",
-      maxResults: 50,
-    });
-    await this.leads.scoreLeads();
+
+    // Score any unscored leads (ingest happens via GHL webhooks / Whop purchases)
+    const scored = await this.leads.scoreLeads();
+
+    // Sync warm/hot leads to GHL CRM
     await this.leads.syncToGHL("warm");
+
+    // Forward hot leads to Artemis (Researcher) for enrichment
+    const hotLeads = this.leads.getLeads({ score: "hot" }).map((l) => ({
+      name: l.name,
+      email: l.email,
+      score: l.score!,
+      context: l.rawContext,
+    }));
+    if (hotLeads.length > 0) {
+      await this.pantheon.forwardLeads(hotLeads);
+    }
+
+    if (scored.length > 0) {
+      logger.info(`[Leads] Pipeline complete — ${scored.length} leads scored`);
+    }
+
     await this.syncDashboardMetrics();
   }
 
@@ -315,6 +412,15 @@ export class CashClawAgent {
     const monthlyUsd = this.stripe
       ? await this.stripe.getMonthlyRevenue().catch(() => 0)
       : 0;
+
+    const whopOrderCount = this.whop
+      ? (await this.whop.fetchOrders(50).catch(() => [])).length
+      : 0;
+
+    const stripeMode = process.env.STRIPE_MODE === "live" ? "live" : "test";
+    const xApiStatus = (
+      process.env.X_API_KEY ? "active" : "depleted"
+    ) as "active" | "depleted" | "manual";
 
     updateNestedMetrics("agent", {
       id: this.config.agentId,
@@ -329,17 +435,35 @@ export class CashClawAgent {
     });
     updateNestedMetrics("revenue", {
       ethEarned: this.stats.totalEthEarned,
-      usdEarned: walletStatus?.balanceUsd ?? 0,
       monthlyUsd,
+      whopOrders: whopOrderCount,
+      stripeMode,
     });
     updateNestedMetrics("social", {
       tweetsPosted: postHistory.length,
+      xApiStatus,
+      engagementReplies: 0,
     });
     updateNestedMetrics("leads", {
-      scraped: leadStats.total,
+      total: leadStats.total,
       scored: leadStats.scored,
       qualified: leadStats.hot,
       nurtured: leadStats.warm,
+    });
+
+    this.syncScalingMetrics();
+  }
+
+  private syncScalingMetrics(): void {
+    const progress = this.phaseTracker.getProgress();
+    updateNestedMetrics("scaling", {
+      currentPhase: progress.phase.id,
+      phaseName: progress.phase.name,
+      kpiProgress: progress.kpiProgress,
+      kpiTarget: progress.phase.kpiTarget,
+      kpiUnit: progress.phase.kpiUnit,
+      kpiPercent: progress.kpiPercent,
+      pendingMilestones: progress.pendingMilestones,
     });
   }
 
@@ -356,5 +480,21 @@ export class CashClawAgent {
 
   getActiveTasks(): ActiveTask[] {
     return Array.from(this.activeTasks.values());
+  }
+
+  /** Ingest a GHL webhook payload as a lead */
+  ingestGhlWebhook(payload: Record<string, unknown>): void {
+    this.leads.ingestGhlWebhook(payload);
+  }
+
+  /** Ingest a Whop purchase as a lead for upsell nurturing */
+  ingestWhopPurchase(email: string, productName: string, priceUsd: number): void {
+    this.leads.ingestWhopPurchase({ email, productName, priceUsd });
+  }
+
+  /** Mark a scaling milestone as complete (e.g. "First Whop sale") */
+  completeMilestone(milestone: string): void {
+    this.phaseTracker.completeMilestone(milestone);
+    this.syncScalingMetrics();
   }
 }

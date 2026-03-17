@@ -14,7 +14,7 @@ export interface WalletStatus {
 const LOW_BALANCE_THRESHOLD_ETH = 0.005;
 
 export class EthWallet {
-  private wallet: ethers.Wallet;
+  private wallet: ethers.Wallet | ethers.HDNodeWallet;
   private provider: ethers.JsonRpcProvider;
   private cachedStatus?: WalletStatus;
   private lastFetch = 0;

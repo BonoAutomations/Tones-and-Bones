@@ -36,7 +36,7 @@ export class TaskExecutor {
         model: this.config.llm.model,
         max_tokens: 8192,
         system: systemPrompt,
-        thinking: { type: "adaptive" },
+        thinking: { type: "enabled", budget_tokens: 8000 },
         messages,
       });
 
