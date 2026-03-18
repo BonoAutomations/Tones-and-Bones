@@ -26,6 +26,7 @@ interface MemoryState {
   trades: TradeRecord[];
   notes: AgentNote[];
   sessionInsights: string[];
+  lastSessionSummary?: string;
 }
 
 /**
@@ -142,6 +143,26 @@ export class AgentMemory {
     } catch (err) {
       logger.warn(`[AgentMemory] Could not save memory: ${err}`);
     }
+  }
+
+  /**
+   * Get total closed PnL for trades closed today (UTC).
+   */
+  getDailyPnL(): number {
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    return this.state.trades
+      .filter((t) => t.outcome !== 'open' && t.pnl !== undefined && t.timestamp >= todayStart.getTime())
+      .reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+  }
+
+  saveSessionSummary(summary: string): void {
+    this.state.lastSessionSummary = summary;
+    this.save();
+  }
+
+  getLastSessionSummary(): string | undefined {
+    return this.state.lastSessionSummary;
   }
 
   /** Compact summary for brain context injection */

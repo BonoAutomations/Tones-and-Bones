@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
 import { BaseExchange } from '../exchange/base';
@@ -186,22 +187,33 @@ export function buildTools(ctx: ToolContext) {
           timestamp: Date.now(),
         };
 
-        // Minimal BotState for risk check
+        // Minimal BotState for risk check — fetch live prices for existing positions
+        const positionEntries = await Promise.allSettled(
+          Array.from(ctx.positions.entries()).map(async ([id, p]) => {
+            const posExchange = ctx.exchanges.get(p.platform);
+            let currentPrice = p.entryPrice;
+            if (posExchange) {
+              try {
+                const t = await posExchange.getTicker(p.symbol);
+                currentPrice = t.last;
+              } catch { /* fallback to entry price */ }
+            }
+            const unrealizedPnL = p.side === 'buy'
+              ? (currentPrice - p.entryPrice) * p.amount
+              : (p.entryPrice - currentPrice) * p.amount;
+            return [id, {
+              id: p.id, symbol: p.symbol, side: p.side as OrderSide,
+              entryPrice: p.entryPrice, currentPrice, amount: p.amount,
+              unrealizedPnL, unrealizedPnLPercent: p.entryPrice > 0 ? unrealizedPnL / (p.entryPrice * p.amount) : 0,
+              stopLoss: p.stopLoss, takeProfit: p.takeProfit,
+              openedAt: p.openedAt, orderId: p.orderId,
+            } as Position] as [string, Position];
+          })
+        );
         const positionsAsMap = new Map<string, Position>(
-          Array.from(ctx.positions.entries()).map(([id, p]) => [id, {
-            id: p.id,
-            symbol: p.symbol,
-            side: p.side as OrderSide,
-            entryPrice: p.entryPrice,
-            currentPrice: p.entryPrice,
-            amount: p.amount,
-            unrealizedPnL: 0,
-            unrealizedPnLPercent: 0,
-            stopLoss: p.stopLoss,
-            takeProfit: p.takeProfit,
-            openedAt: p.openedAt,
-            orderId: p.orderId,
-          }])
+          positionEntries
+            .filter((r): r is PromiseFulfilledResult<[string, Position]> => r.status === 'fulfilled')
+            .map((r) => r.value)
         );
 
         const state: BotState = {
@@ -356,22 +368,25 @@ export function buildTools(ctx: ToolContext) {
       const positions = Array.from(ctx.positions.values())
         .filter((p) => platform === 'all' || p.platform === platform);
 
-      // Enrich with current price if available
-      const enriched = await Promise.all(
+      // Enrich with live prices using allSettled so one slow exchange doesn't block others
+      const results = await Promise.allSettled(
         positions.map(async (p) => {
-          try {
-            const exchange = getExchange(ctx, p.platform);
-            if (exchange) {
-              const ticker = await exchange.getTicker(p.symbol);
-              const currentPrice = ticker.last;
-              const pnl = p.side === 'buy'
-                ? (currentPrice - p.entryPrice) * p.amount
-                : (p.entryPrice - currentPrice) * p.amount;
-              return { ...p, currentPrice, unrealizedPnL: pnl };
-            }
-          } catch { /* ignore price fetch errors */ }
-          return p;
+          const exchange = getExchange(ctx, p.platform);
+          if (!exchange) return { ...p, priceError: 'Exchange not connected' };
+          const ticker = await exchange.getTicker(p.symbol);
+          const currentPrice = ticker.last;
+          const unrealizedPnL = p.side === 'buy'
+            ? (currentPrice - p.entryPrice) * p.amount
+            : (p.entryPrice - currentPrice) * p.amount;
+          const pnlPct = (unrealizedPnL / (p.entryPrice * p.amount)) * 100;
+          return { ...p, currentPrice, unrealizedPnL, unrealizedPnLPct: `${pnlPct.toFixed(2)}%` };
         })
+      );
+
+      const enriched = results.map((r, i) =>
+        r.status === 'fulfilled'
+          ? r.value
+          : { ...positions[i], priceError: (r.reason as Error)?.message ?? 'fetch failed' }
       );
 
       return ok({ count: enriched.length, positions: enriched });
@@ -499,6 +514,96 @@ export function buildTools(ctx: ToolContext) {
     },
   });
 
+  // ── 12. Market Context ──────────────────────────────────────────────────
+  const getMarketContext = betaZodTool({
+    name: 'get_market_context',
+    description: [
+      'Fetch macro crypto market context: BTC/ETH spot prices, 24h changes, BTC dominance,',
+      'and the Crypto Fear & Greed Index. Use this to calibrate trade sizing and risk.',
+      'Fear ≤ 25 = Extreme Fear (potential buy zone). Greed ≥ 75 = Extreme Greed (caution).',
+    ].join(' '),
+    inputSchema: z.object({}),
+    run: async () => {
+      try {
+        const [priceRes, fngRes] = await Promise.allSettled([
+          axios.get('https://api.coingecko.com/api/v3/simple/price', {
+            params: {
+              ids: 'bitcoin,ethereum,solana',
+              vs_currencies: 'usd',
+              include_24hr_change: true,
+              include_market_cap: true,
+            },
+            timeout: 8000,
+          }),
+          axios.get('https://api.alternative.me/fng/', {
+            params: { limit: 1 },
+            timeout: 5000,
+          }),
+        ]);
+
+        const prices = priceRes.status === 'fulfilled' ? priceRes.value.data : null;
+        const fng = fngRes.status === 'fulfilled' ? fngRes.value.data?.data?.[0] : null;
+
+        const btc = prices?.bitcoin;
+        const eth = prices?.ethereum;
+        const sol = prices?.solana;
+
+        // Simple BTC dominance estimate from market caps
+        const totalMcap = (btc?.usd_market_cap ?? 0) + (eth?.usd_market_cap ?? 0);
+        const btcDominance = totalMcap > 0
+          ? ((btc?.usd_market_cap ?? 0) / totalMcap * 100).toFixed(1)
+          : 'unavailable';
+
+        return ok({
+          timestamp: new Date().toISOString(),
+          bitcoin: btc ? {
+            price: `$${btc.usd.toLocaleString()}`,
+            change24h: `${btc.usd_24h_change?.toFixed(2) ?? '?'}%`,
+          } : 'unavailable',
+          ethereum: eth ? {
+            price: `$${eth.usd.toLocaleString()}`,
+            change24h: `${eth.usd_24h_change?.toFixed(2) ?? '?'}%`,
+          } : 'unavailable',
+          solana: sol ? {
+            price: `$${sol.usd.toLocaleString()}`,
+            change24h: `${sol.usd_24h_change?.toFixed(2) ?? '?'}%`,
+          } : 'unavailable',
+          btcDominance: `${btcDominance}%`,
+          fearAndGreed: fng ? {
+            value: parseInt(fng.value, 10),
+            classification: fng.value_classification,
+            interpretation: parseInt(fng.value, 10) <= 25
+              ? 'Extreme Fear — market may be oversold'
+              : parseInt(fng.value, 10) >= 75
+              ? 'Extreme Greed — consider reducing exposure'
+              : 'Neutral/moderate sentiment',
+          } : 'unavailable',
+        });
+      } catch (err) {
+        return fail(`Market context error: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    },
+  });
+
+  // ── 13. Update SL/TP ────────────────────────────────────────────────────
+  const updateSlTp = betaZodTool({
+    name: 'update_sl_tp',
+    description: 'Adjust the stop-loss or take-profit levels on an open position without closing it. Useful for trailing stops.',
+    inputSchema: z.object({
+      positionId: z.string().describe('Position ID from list_positions'),
+      stopLoss: z.number().positive().optional().describe('New stop-loss price'),
+      takeProfit: z.number().positive().optional().describe('New take-profit price'),
+    }),
+    run: async ({ positionId, stopLoss, takeProfit }) => {
+      const position = ctx.positions.get(positionId);
+      if (!position) return fail(`Position '${positionId}' not found.`);
+      if (stopLoss !== undefined) position.stopLoss = stopLoss;
+      if (takeProfit !== undefined) position.takeProfit = takeProfit;
+      logger.info(`[Brain] Updated ${positionId}: SL=${stopLoss ?? 'unchanged'}, TP=${takeProfit ?? 'unchanged'}`);
+      return ok({ updated: true, positionId, stopLoss: position.stopLoss, takeProfit: position.takeProfit });
+    },
+  });
+
   return [
     getMarketData,
     getPortfolio,
@@ -507,7 +612,9 @@ export function buildTools(ctx: ToolContext) {
     placeOrder,
     listPositions,
     closePosition,
+    updateSlTp,
     searchMarkets,
+    getMarketContext,
     getPerformance,
     saveNote,
     recallNotes,
