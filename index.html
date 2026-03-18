@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tones & Bones | Market Intelligence Workspace</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Tones & Bones</p>
+        <h1>Market Intelligence Workspace</h1>
+        <p class="hero-copy">
+          A research-first dashboard for equities, crypto, macro themes, and sports-betting analysis.
+          This workspace is intentionally designed around risk controls, evidence logging, and transparency —
+          not promises, "sure things," or guaranteed profit.
+        </p>
+      </div>
+      <div class="hero-card">
+        <h2>Operating Rules</h2>
+        <ul>
+          <li>No guaranteed outcomes.</li>
+          <li>No autonomous trading or wagering execution in this MVP.</li>
+          <li>Every idea must include thesis, risk, and invalidation.</li>
+          <li>Wallet support is scoped as future, non-custodial readiness only.</li>
+        </ul>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel upload-panel">
+        <div class="section-title-row">
+          <h2>Bring Your Own Research</h2>
+          <span class="badge">Local files only</span>
+        </div>
+        <p>
+          Upload pertinent notes, CSV exports, JSON payloads, or text documents. The app extracts a compact
+          summary so your materials can inform the rest of the workspace without sending them anywhere.
+        </p>
+        <label for="fileInput" class="upload-box">
+          <input id="fileInput" type="file" multiple accept=".txt,.md,.csv,.json" />
+          <strong>Drop files here or click to upload</strong>
+          <span>Supported: TXT, MD, CSV, JSON</span>
+        </label>
+        <div id="fileSummary" class="file-summary empty">No files uploaded yet.</div>
+      </section>
+
+      <section class="grid two-up">
+        <article class="panel">
+          <div class="section-title-row">
+            <h2>Cross-Market Research</h2>
+            <span class="badge">Framework</span>
+          </div>
+          <div id="marketCards" class="card-stack"></div>
+        </article>
+
+        <article class="panel">
+          <div class="section-title-row">
+            <h2>Crypto Opportunity Review</h2>
+            <span class="badge">High volatility</span>
+          </div>
+          <div id="cryptoCards" class="card-stack"></div>
+        </article>
+      </section>
+
+      <section class="grid two-up">
+        <article class="panel">
+          <div class="section-title-row">
+            <h2>Sports Betting Research</h2>
+            <span class="badge warning">No sure bets</span>
+          </div>
+          <p>
+            Betting ideas should be treated as speculative entertainment. This section focuses on tracking edge
+            assumptions, line movement, injury/news dependencies, bankroll limits, and social-sentiment noise.
+          </p>
+          <div id="bettingCards" class="card-stack"></div>
+        </article>
+
+        <article class="panel">
+          <div class="section-title-row">
+            <h2>Wallet Integration Readiness</h2>
+            <span class="badge">Future scope</span>
+          </div>
+          <div id="walletChecklist" class="checklist"></div>
+        </article>
+      </section>
+
+      <section class="panel notes-panel">
+        <div class="section-title-row">
+          <h2>Idea Journal</h2>
+          <span class="badge">Required fields</span>
+        </div>
+        <form id="journalForm" class="journal-form">
+          <label>
+            Idea name
+            <input id="ideaName" required placeholder="Example: BTC breakout watch" />
+          </label>
+          <label>
+            Thesis
+            <textarea id="ideaThesis" required placeholder="Why might this opportunity exist?"></textarea>
+          </label>
+          <label>
+            Risk / invalidation
+            <textarea id="ideaRisk" required placeholder="What would prove the idea wrong?"></textarea>
+          </label>
+          <button type="submit">Save research note</button>
+        </form>
+        <div id="journalEntries" class="journal-entries empty">No saved ideas yet.</div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
