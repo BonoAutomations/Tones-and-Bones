@@ -1,110 +1,103 @@
 /**
- * Tones-and-Bones Trading Bot
- * Entry point
+ * Tones-and-Bones — Agentic Trading System
+ *
+ * Architecture:
+ *   Orchestrator → MainBrain (Claude Opus 4.6) → Platform Tools
+ *                                                  ├── Coinbase
+ *                                                  ├── Crypto.com
+ *                                                  └── Polymarket
+ *
+ * The MainBrain reasons about markets, calls tools, and manages
+ * positions across all platforms autonomously.
+ *
+ * Required env vars:
+ *   ANTHROPIC_API_KEY       — Your Anthropic API key
+ *   COINBASE_API_KEY/SECRET — Coinbase Advanced Trade
+ *   CRYPTOCOM_API_KEY/SECRET — Crypto.com Exchange
+ *   POLYMARKET_PRIVATE_KEY  — Polygon wallet private key
+ *   DRY_RUN=true            — Simulate trades (safe default)
  */
-import { loadConfig } from './config';
-import { createExchange } from './exchange/factory';
-import { createStrategy } from './strategies/factory';
-import { TradingBot } from './bot';
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.join(process.cwd(), '.env') });
+
+import { Orchestrator, loadAgentConfig } from './agents/orchestrator';
 import logger from './utils/logger';
 
 async function main(): Promise<void> {
-  logger.info('='.repeat(60));
-  logger.info('  Tones-and-Bones Automated Trading Bot');
-  logger.info('='.repeat(60));
+  logger.info('='.repeat(62));
+  logger.info('  Tones-and-Bones — Agentic Trading System');
+  logger.info('  Brain: Claude Opus 4.6 | Platforms: Coinbase, Crypto.com, Polymarket');
+  logger.info('='.repeat(62));
 
-  const config = loadConfig();
-  const exchange = createExchange(config.exchange);
-  const strategy = createStrategy(config.strategy);
+  if (!process.env.ANTHROPIC_API_KEY) {
+    logger.error('[Main] ANTHROPIC_API_KEY is required. Set it in your .env file.');
+    process.exit(1);
+  }
 
-  const bot = new TradingBot(config, exchange, strategy);
+  const config = loadAgentConfig();
+  const orchestrator = new Orchestrator(config);
 
-  // ─── Event Listeners ─────────────────────────────────────────────────────
+  // ─── Event Listeners ───────────────────────────────────────────────────────
 
-  bot.on('bot:started', () => {
-    logger.info('[Main] Bot started successfully');
+  orchestrator.on('started', () => {
+    const status = orchestrator.getStatus();
+    const mode = status.dryRun ? '(DRY-RUN)' : '(LIVE ⚠️)';
+    logger.info(`[Main] Agentic system started ${mode}`);
+    logger.info(`[Main] Platforms: ${status.platforms.join(', ')}`);
+    logger.info(`[Main] Poll interval: ${config.pollIntervalMs / 1000}s`);
   });
 
-  bot.on('bot:stopped', () => {
-    logger.info('[Main] Bot stopped');
+  orchestrator.on('platform:connected', (name) => {
+    logger.info(`[Main] ✓ ${name} connected`);
   });
 
-  bot.on('bot:error', (error: Error) => {
-    logger.error(`[Main] Bot error: ${error.message}`);
+  orchestrator.on('platform:failed', (name, reason) => {
+    logger.warn(`[Main] ✗ ${name} failed: ${reason}`);
   });
 
-  bot.on('tick', (ticker: { symbol: string; last: number; volume: number }) => {
-    logger.debug(`[Main] Tick: ${ticker.symbol} @ $${ticker.last.toFixed(2)} | Vol: ${ticker.volume.toFixed(2)}`);
+  orchestrator.on('tick:start', (n) => {
+    logger.info(`[Main] ─── Tick #${n} ────────────────────────────────`);
   });
 
-  bot.on('signal', (signal: { type: string; strength: number; reason: string }) => {
-    if (signal.type !== 'hold') {
-      logger.info(`[Main] Signal: ${signal.type.toUpperCase()} (strength: ${signal.strength.toFixed(2)}) - ${signal.reason}`);
-    }
+  orchestrator.on('tick:complete', (n, summary) => {
+    logger.info(`[Main] Tick #${n} complete:\n${summary.slice(0, 400)}${summary.length > 400 ? '...' : ''}`);
   });
 
-  bot.on('order:placed', (order: { id: string; side: string; amount: number; symbol: string }) => {
-    logger.info(`[Main] Order placed: ${order.id} | ${order.side.toUpperCase()} ${order.amount} ${order.symbol}`);
+  orchestrator.on('tick:error', (n, err) => {
+    logger.error(`[Main] Tick #${n} error: ${err.message}`);
   });
 
-  bot.on('order:filled', (order: { id: string; avgFillPrice: number }) => {
-    logger.info(`[Main] Order filled: ${order.id} @ $${order.avgFillPrice.toFixed(2)}`);
-  });
-
-  bot.on('position:opened', (pos: { id: string; side: string; symbol: string; entryPrice: number }) => {
-    logger.info(`[Main] Position opened: ${pos.id} | ${pos.side.toUpperCase()} ${pos.symbol} @ $${pos.entryPrice.toFixed(2)}`);
-  });
-
-  bot.on('position:closed', (pos: { id: string }, trade: { pnl: number; pnlPercent: number }) => {
-    const sign = trade.pnl >= 0 ? '+' : '';
-    logger.info(`[Main] Position closed: ${pos.id} | PnL: ${sign}$${trade.pnl.toFixed(2)} (${sign}${(trade.pnlPercent * 100).toFixed(2)}%)`);
-  });
-
-  bot.on('risk:rejected', (reason: string) => {
-    logger.warn(`[Main] Trade rejected: ${reason}`);
-  });
-
-  bot.on('circuit:opened', (reason: string) => {
-    logger.error(`[Main] Circuit breaker opened: ${reason}`);
-  });
-
-  bot.on('daily:loss:limit', (dailyPnL: number) => {
-    logger.error(`[Main] Daily loss limit hit! Daily PnL: $${dailyPnL.toFixed(2)}. Bot paused until midnight.`);
+  orchestrator.on('stopped', () => {
+    logger.info('[Main] Agentic system stopped.');
+    const status = orchestrator.getStatus();
+    logger.info(`[Main] Total ticks: ${status.tickCount} | Open positions: ${status.openPositions}`);
   });
 
   // ─── Graceful Shutdown ─────────────────────────────────────────────────────
 
   const shutdown = async (signal: string): Promise<void> => {
-    logger.info(`[Main] Received ${signal}. Shutting down gracefully...`);
-
-    // Print final stats
-    const stats = bot.getStats();
-    logger.info('[Main] Final Statistics:');
-    logger.info(`  Total trades: ${stats.totalTrades}`);
-    logger.info(`  Win rate: ${(stats.winRate * 100).toFixed(1)}%`);
-    logger.info(`  Daily PnL: $${stats.dailyPnL.toFixed(2)} (${(stats.dailyPnLPercent * 100).toFixed(2)}%)`);
-    logger.info(`  Total PnL: $${stats.totalPnL.toFixed(2)}`);
-
-    await bot.stop(false); // Don't force-close positions on graceful shutdown
+    logger.info(`[Main] Received ${signal} — shutting down gracefully...`);
+    await orchestrator.stop(true);
     process.exit(0);
   };
 
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => void shutdown('SIGINT'));
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
   process.on('uncaughtException', (error) => {
     logger.error(`[Main] Uncaught exception: ${error.message}`, { stack: error.stack });
-    shutdown('uncaughtException').catch(console.error);
+    void shutdown('uncaughtException');
   });
   process.on('unhandledRejection', (reason) => {
     logger.error(`[Main] Unhandled rejection: ${reason}`);
   });
 
-  // ─── Start Bot ─────────────────────────────────────────────────────────────
+  // ─── Start ─────────────────────────────────────────────────────────────────
 
-  await bot.start();
+  await orchestrator.start();
 }
 
 main().catch((err) => {
-  logger.error(`[Main] Fatal error: ${err instanceof Error ? err.message : String(err)}`);
+  logger.error(`[Main] Fatal: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 });
