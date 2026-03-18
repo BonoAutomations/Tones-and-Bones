@@ -3,6 +3,7 @@ import { BaseStrategy } from './base';
 import { MovingAverageStrategy } from './moving-average';
 import { RSIStrategy } from './rsi';
 import { CombinedStrategy } from './combined';
+import { PolymarketStrategy } from './polymarket';
 
 /**
  * Factory to create strategy instances by name.
@@ -16,7 +17,9 @@ export function createStrategy(config: StrategyConfig): BaseStrategy {
       return new RSIStrategy(config);
     case 'combined':
       return new CombinedStrategy(config);
+    case 'polymarket':
+      return new PolymarketStrategy(config);
     default:
-      throw new Error(`Unknown strategy: "${config.name}". Supported: moving_average, rsi, combined`);
+      throw new Error(`Unknown strategy: "${config.name}". Supported: moving_average, rsi, combined, polymarket`);
   }
 }
