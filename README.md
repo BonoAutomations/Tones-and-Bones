@@ -10,13 +10,61 @@ Risk-aware market intelligence workspace for researching equities, crypto, macro
 - Stores saved research notes in `data/journal.json`.
 - Explicitly avoids claiming guaranteed returns, "sure things," or bulletproof strategies.
 
-## Run locally
+## Copy-paste run commands
+
+### 1) Install and start
 
 ```bash
+cd /workspace/Tones-and-Bones
 npm start
 ```
 
-Then visit `http://localhost:8000`.
+Then open `http://localhost:8000`.
+
+### 2) Basic health check
+
+```bash
+curl -s http://127.0.0.1:8000/api/health
+```
+
+### 3) Fetch the research payload
+
+```bash
+curl -s http://127.0.0.1:8000/api/research
+```
+
+### 4) Save a journal entry
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/journal \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "BTC breakout watch",
+    "thesis": "Price holds above resistance with improving momentum",
+    "risk": "Break back below support invalidates the setup"
+  }'
+```
+
+### 5) Summarize uploaded research text through the backend
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/uploads/summarize \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "files": [
+      {
+        "name": "notes.txt",
+        "content": "Fed pause odds rising, BTC liquidity improving, stay risk-aware"
+      }
+    ]
+  }'
+```
+
+### 6) Run the included smoke test script
+
+```bash
+./scripts/smoke-test.sh
+```
 
 ## Available backend endpoints
 
