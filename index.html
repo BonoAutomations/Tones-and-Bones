@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Command Center - Terminal Hub</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: '#0df246',
+              'background-light': '#f5f8f6',
+              'background-dark': '#0A0A0A',
+              surface: '#141414',
+              'surface-hover': '#1F1F1F',
+              'border-color': '#2A2A2A',
+              'text-main': '#F5F5F0',
+              'text-muted': '#70706B',
+              danger: '#B83B3B'
+            },
+            fontFamily: {
+              display: ['Space Grotesk', 'sans-serif']
+            },
+            borderRadius: {
+              DEFAULT: '0.125rem',
+              sm: '0.25rem',
+              lg: '0.5rem',
+              xl: '0.75rem',
+              full: '9999px'
+            },
+            spacing: {
+              xs: '4px',
+              sm: '8px',
+              md: '16px'
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      body {
+        font-family: 'Space Grotesk', sans-serif;
+      }
+
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #2A2A2A;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #70706B;
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: -1000px 0;
+        }
+        100% {
+          background-position: 1000px 0;
+        }
+      }
+
+      .animate-shimmer {
+        animation: shimmer 2s infinite linear;
+        background: linear-gradient(to right, #141414 4%, #1F1F1F 25%, #141414 36%);
+        background-size: 1000px 100%;
+      }
+
+      .group\/log:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .tooltip {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(4px);
+        transition: all 0.2s ease-in-out;
+      }
+    </style>
+  </head>
+  <body class="bg-background-light text-slate-900 h-screen overflow-hidden flex flex-col font-display selection:bg-primary/30 dark:bg-background-dark dark:text-text-main">
+    <main class="flex flex-1 overflow-hidden">
+      <aside class="flex w-[280px] flex-col overflow-y-auto border-r border-border-color bg-surface">
+        <div class="flex flex-col gap-sm p-md">
+          <div>
+            <h1 class="text-lg font-semibold tracking-tight text-text-main">Command Center</h1>
+            <p class="text-xs uppercase tracking-widest text-text-muted">Agency Platform</p>
+          </div>
+        </div>
+
+        <nav class="flex flex-col gap-xs px-sm py-xs">
+          <a class="flex items-center gap-sm rounded-sm border border-primary/20 bg-primary/10 px-sm py-2 text-primary transition-colors" href="#">
+            <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1">terminal</span>
+            <span class="text-sm font-medium">Terminal Hub</span>
+          </a>
+          <a class="group flex items-center gap-sm rounded-sm px-sm py-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-main" href="#">
+            <span class="material-symbols-outlined text-[18px] group-hover:text-text-main">grid_on</span>
+            <span class="text-sm font-medium">CRM Matrix</span>
+          </a>
+          <a class="group flex items-center gap-sm rounded-sm px-sm py-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-main" href="#">
+            <span class="material-symbols-outlined text-[18px] group-hover:text-text-main">account_tree</span>
+            <span class="text-sm font-medium">Flow Architect</span>
+          </a>
+          <a class="group flex items-center gap-sm rounded-sm px-sm py-2 text-text-muted transition-colors hover:bg-surface-hover hover:text-text-main" href="#">
+            <span class="material-symbols-outlined text-[18px] group-hover:text-text-main">monitoring</span>
+            <span class="text-sm font-medium">Revenue Telemetry</span>
+          </a>
+        </nav>
+
+        <div class="mt-auto flex flex-col gap-sm p-md">
+          <h2 class="mb-xs text-xs uppercase tracking-widest text-text-muted">Global Metrics</h2>
+          <div class="group cursor-pointer rounded-sm border border-border-color bg-background-dark p-sm transition-colors hover:border-primary/50">
+            <div class="mb-1 flex items-center justify-between">
+              <span class="text-xs text-text-muted">Total ARR</span>
+              <span class="text-[11px] font-medium text-primary">+14.2%</span>
+            </div>
+            <div class="text-xl font-semibold tracking-tight text-text-main">$842,000</div>
+          </div>
+          <div class="cursor-pointer rounded-sm border border-border-color bg-background-dark p-sm transition-colors hover:border-primary/50">
+            <div class="mb-1 flex items-center justify-between">
+              <span class="text-xs text-text-muted">Active Leads</span>
+              <span class="text-[11px] font-medium text-primary">+5.1%</span>
+            </div>
+            <div class="text-xl font-semibold tracking-tight text-text-main">1,204</div>
+          </div>
+          <div class="cursor-pointer rounded-sm border border-border-color bg-background-dark p-sm transition-colors hover:border-primary/50">
+            <div class="mb-1 flex items-center justify-between">
+              <span class="text-xs text-text-muted">API Calls / hr</span>
+              <span class="text-[11px] font-medium text-danger">-1.2%</span>
+            </div>
+            <div class="text-xl font-semibold tracking-tight text-text-main">45,291</div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="min-w-[400px] flex-1 bg-background-dark">
+        <div class="sticky top-0 z-10 flex items-center justify-between border-b border-border-color bg-surface/50 px-md py-sm backdrop-blur">
+          <h2 class="flex items-center gap-2 text-sm font-medium text-text-main">
+            <span class="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(13,242,70,0.5)] animate-pulse"></span>
+            Live Event Stream
+          </h2>
+          <div class="flex gap-2">
+            <button class="flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-text-main">
+              <span class="material-symbols-outlined text-[14px]">filter_list</span>
+              Filter
+            </button>
+            <button class="flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-text-main">
+              <span class="material-symbols-outlined text-[14px]">pause</span>
+              Pause
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-xs">
+          <div class="flex flex-col gap-xs font-mono text-[12px]">
+            <div class="group/log relative flex cursor-crosshair gap-sm rounded-sm px-2 py-1 transition-colors hover:bg-surface-hover">
+              <span class="shrink-0 text-text-muted">14:02:45.102</span>
+              <span class="shrink-0 text-primary">[INFO]</span>
+              <span class="truncate text-text-main">Lead ingested via Webhook: user_id_8921</span>
+              <div class="tooltip absolute left-1/4 top-full z-50 mt-1 w-[300px] rounded-sm border border-border-color bg-surface p-sm shadow-[0_8px_24px_rgba(0,0,0,0.8)]">
+                <pre class="overflow-x-auto text-[10px] text-text-muted">{
+  "source": "typeform",
+  "payload": {
+    "email": "j.doe@example.com",
+    "company": "Acme Corp",
+    "intent_score": 85
+  },
+  "latency_ms": 12
+}</pre>
+              </div>
+            </div>
+            <div class="group/log relative flex cursor-crosshair gap-sm rounded-sm px-2 py-1 transition-colors hover:bg-surface-hover">
+              <span class="shrink-0 text-text-muted">14:02:44.890</span>
+              <span class="shrink-0 text-[#3b82f6]">[EXEC]</span>
+              <span class="truncate text-text-main">Sequence injected: Q3_Outbound_Seq -&gt; 150 targets</span>
+            </div>
+            <div class="group/log relative flex cursor-crosshair gap-sm rounded-sm border border-danger/20 bg-danger/10 px-2 py-1">
+              <span class="shrink-0 text-text-muted">14:02:41.005</span>
+              <span class="shrink-0 text-danger">[WARN]</span>
+              <span class="truncate text-text-main">API Rate limit approaching: Mailgun (92%)</span>
+            </div>
+            <div class="flex gap-sm px-2 py-1">
+              <div class="animate-shimmer h-4 w-20 rounded-sm"></div>
+              <div class="animate-shimmer h-4 w-12 rounded-sm"></div>
+              <div class="animate-shimmer h-4 w-48 rounded-sm"></div>
+            </div>
+            <div class="group/log relative flex cursor-crosshair gap-sm rounded-sm px-2 py-1 transition-colors hover:bg-surface-hover">
+              <span class="shrink-0 text-text-muted">14:02:30.112</span>
+              <span class="shrink-0 text-primary">[INFO]</span>
+              <span class="truncate text-text-main">Matrix view updated: +12 leads converted</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="flex w-[300px] flex-col border-l border-border-color bg-surface">
+        <div class="border-b border-border-color px-md py-sm">
+          <h2 class="text-sm font-medium text-text-main">System Health</h2>
+        </div>
+        <div class="flex flex-1 flex-col gap-sm overflow-y-auto p-md">
+          <div class="flex items-center justify-between rounded-sm border border-border-color bg-background-dark p-sm">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-text-main">Inbound Triage V2</span>
+              <span class="text-[11px] text-text-muted">Running 42ms avg latency</span>
+            </div>
+            <div class="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(13,242,70,0.5)]"></div>
+          </div>
+          <div class="flex items-center justify-between rounded-sm border border-border-color bg-background-dark p-sm">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-text-main">Q3_Outbound_Seq</span>
+              <span class="text-[11px] text-text-muted">Processing 150 items...</span>
+            </div>
+            <div class="h-2 w-2 rounded-full bg-[#3b82f6] animate-pulse"></div>
+          </div>
+          <div class="flex items-center justify-between rounded-sm border border-danger/30 bg-danger/5 p-sm">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-text-main">CRM Sync (Hubspot)</span>
+              <span class="text-[11px] text-danger">Connection Refused</span>
+            </div>
+            <div class="h-2 w-2 rounded-full bg-danger shadow-[0_0_8px_rgba(184,59,59,0.5)]"></div>
+          </div>
+          <div class="flex items-center justify-between rounded-sm border border-border-color bg-background-dark p-sm opacity-60">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-text-main">Legacy Drip</span>
+              <span class="text-[11px] text-text-muted">Paused globally</span>
+            </div>
+            <div class="h-2 w-2 rounded-full bg-text-muted"></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="flex h-[48px] items-center border-t border-border-color bg-surface px-md">
+      <div class="flex w-full max-w-[800px] items-center gap-sm">
+        <span class="material-symbols-outlined text-[18px] text-text-muted">terminal</span>
+        <input
+          autocomplete="off"
+          class="w-full border-none bg-transparent p-0 font-mono text-sm text-text-main placeholder:text-text-muted/50 focus:ring-0"
+          placeholder="Command &gt; Type 'inject flow' or 'CMD+K' to focus..."
+          spellcheck="false"
+          type="text"
+        />
+        <div class="flex gap-1">
+          <kbd class="rounded-[2px] border border-border-color bg-background-dark px-1.5 py-0.5 font-mono text-[10px] text-text-muted shadow-sm">CMD</kbd>
+          <kbd class="rounded-[2px] border border-border-color bg-background-dark px-1.5 py-0.5 font-mono text-[10px] text-text-muted shadow-sm">K</kbd>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
