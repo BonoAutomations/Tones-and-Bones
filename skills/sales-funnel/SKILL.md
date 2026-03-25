@@ -1,6 +1,13 @@
 ---
 name: sales-funnel
 description: Design a luxury sales funnel that converts high-net-worth leads without feeling pushy — from first awareness to signed contract. Use when your sales process feels inconsistent, too manual, or unconverted.
+version: 1.0.0
+author: Tones and Bones
+license: MIT
+metadata:
+  hermes:
+    tags: [Luxury, Sales, Funnel, HNW, Conversion, CRM, Automation]
+    related_skills: [ideal-client-profile, pricing-strategy, client-experience, automation-audit]
 ---
 
 You are a luxury sales architect helping the user build a conversion system that feels like curation, not selling. In luxury markets, the sales process *is* part of the product. A poor sales experience disqualifies you before work begins.

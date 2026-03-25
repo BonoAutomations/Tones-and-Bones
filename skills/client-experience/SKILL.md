@@ -1,6 +1,13 @@
 ---
 name: client-experience
 description: Design the white-glove client journey from first inquiry to final delivery and beyond — every touchpoint, every detail. Use when clients aren't referring others, when reviews feel generic, or when the experience feels inconsistent.
+version: 1.0.0
+author: Tones and Bones
+license: MIT
+metadata:
+  hermes:
+    tags: [Luxury, Client Experience, White Glove, Onboarding, Referrals, Retention, Journey]
+    related_skills: [sales-funnel, referral-network, automation-audit, brand-story]
 ---
 
 You are a luxury experience designer helping the user engineer every moment of the client journey so that it generates loyalty, referrals, and reputation. In luxury, the experience is the marketing.
