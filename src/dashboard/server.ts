@@ -1,4 +1,6 @@
 import express, { Request, Response } from "express";
+import path from "path";
+import Anthropic from "@anthropic-ai/sdk";
 import { logger } from "../utils/logger";
 
 export interface DashboardMetrics {
@@ -72,6 +74,51 @@ let metricsStore: DashboardMetrics = {
 };
 
 const startTime = Date.now();
+
+// ─── Event Queue (SSE + polling) ──────────────────────────────────────────────
+interface DashEvent { level: string; message: string; ts: string }
+const eventQueue: DashEvent[] = [];
+const sseClients: Response[] = [];
+
+export function pushDashboardEvent(level: "INFO" | "WARN" | "ERROR" | "EXEC", message: string): void {
+  const ev: DashEvent = { level, message, ts: new Date().toISOString() };
+  eventQueue.unshift(ev);
+  if (eventQueue.length > 200) eventQueue.pop();
+  const payload = `data: ${JSON.stringify(ev)}\n\n`;
+  sseClients.forEach(c => { try { c.write(payload); } catch {} });
+}
+
+// ─── Research Store ───────────────────────────────────────────────────────────
+interface ResearchItem { title: string; body: string; tag?: string }
+interface ResearchStore {
+  market: ResearchItem[];
+  crypto: ResearchItem[];
+  betting: ResearchItem[];
+  updatedAt: string;
+}
+let researchStore: ResearchStore = {
+  market: [
+    { title: "Fed Policy Watch", body: "Rate trajectory signals key for risk asset allocation. Monitor PCE data.", tag: "Macro" },
+    { title: "AI Sector Rotation", body: "Semi and infrastructure plays leading. NVDA, AVGO, TSM supply chain watch.", tag: "Equities" },
+  ],
+  crypto: [
+    { title: "ETH Base L2 Activity", body: "On-chain activity growing. CashClaw wallet on Base — low fees for payouts.", tag: "On-chain" },
+    { title: "BTC Institutional Flows", body: "ETF inflows watch. Whale accumulation zones near current levels.", tag: "Structure" },
+  ],
+  betting: [
+    { title: "Line Value Framework", body: "Track closing line value. Bet only when edge exceeds vig. Log every bet.", tag: "Edge" },
+    { title: "Prop Market Inefficiency", body: "Player props often mispriced early. Target before sharp action.", tag: "Specials" },
+  ],
+  updatedAt: new Date().toISOString(),
+};
+
+export function updateResearch(patch: Partial<ResearchStore>): void {
+  researchStore = { ...researchStore, ...patch, updatedAt: new Date().toISOString() };
+}
+
+// ─── Journal Store (in-memory fallback) ──────────────────────────────────────
+interface JournalEntry { id: string; name: string; thesis: string; risk: string; ts: string }
+const journalStore: JournalEntry[] = [];
 
 export function updateMetrics(patch: Partial<DashboardMetrics>): void {
   metricsStore = { ...metricsStore, ...patch };
@@ -201,8 +248,14 @@ function formatUptime(ms: number): string {
 
 export function createDashboardServer(port = 3777): { start: () => void; stop: () => void } {
   const app = express();
+  app.use(express.json({ limit: "5mb" }));
 
-  app.get("/", (_req: Request, res: Response) => {
+  // Serve Wealth Command Center UI from public/
+  const publicDir = path.join(process.cwd(), "public");
+  app.use(express.static(publicDir));
+
+  // ── Legacy CashClaw ops dashboard (kept at /ops for direct access) ────────
+  app.get("/ops", (_req: Request, res: Response) => {
     const m = metricsStore;
     const pantheonConnected = m.pantheon.connected;
     const xStatusColor = m.social.xApiStatus === "active" ? "green" : m.social.xApiStatus === "depleted" ? "red" : "yellow";
@@ -267,14 +320,105 @@ export function createDashboardServer(port = 3777): { start: () => void; stop: (
     res.json({ status: "ok", agentId: metricsStore.agent.id });
   });
 
+  // ── Research Cards ─────────────────────────────────────────────────────────
+  app.get("/api/research", (_req: Request, res: Response) => {
+    res.json(researchStore);
+  });
+
+  // ── File Summarizer ────────────────────────────────────────────────────────
+  app.post("/api/summarize", async (req: Request, res: Response) => {
+    const { content, filenames } = req.body as { content: string; filenames: string[] };
+    if (!content) { res.status(400).json({ error: "No content provided" }); return; }
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      res.json({ summary: "⚠️  ANTHROPIC_API_KEY not set — agent must be running to summarize files." });
+      return;
+    }
+
+    try {
+      const client = new Anthropic({ apiKey });
+      const message = await client.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1024,
+        system: "You are a concise financial and business analyst. Summarize the provided documents in bullet points. Focus on key insights, numbers, risks, and action items. Be brief.",
+        messages: [{ role: "user", content: `Summarize these files (${(filenames || []).join(", ")}):\n\n${content.slice(0, 8000)}` }],
+      });
+      const text = message.content.find(b => b.type === "text")?.text ?? "No summary generated.";
+      pushDashboardEvent("INFO", `Summarized: ${(filenames || []).join(", ")}`);
+      res.json({ summary: text });
+    } catch (e) {
+      logger.error("[Dashboard] Summarize error", { e });
+      res.status(500).json({ error: "Summarization failed", detail: String(e) });
+    }
+  });
+
+  // ── Idea Journal (server-side backup; client also writes to localStorage) ──
+  app.get("/api/journal", (_req: Request, res: Response) => {
+    res.json({ entries: journalStore });
+  });
+
+  app.post("/api/journal", (req: Request, res: Response) => {
+    const { name, thesis, risk } = req.body as { name: string; thesis: string; risk: string };
+    if (!name || !thesis || !risk) { res.status(400).json({ error: "name, thesis, risk required" }); return; }
+    const entry: JournalEntry = {
+      id: Date.now().toString(),
+      name: String(name).slice(0, 200),
+      thesis: String(thesis).slice(0, 500),
+      risk: String(risk).slice(0, 500),
+      ts: new Date().toISOString(),
+    };
+    journalStore.unshift(entry);
+    if (journalStore.length > 500) journalStore.pop();
+    pushDashboardEvent("INFO", `Journal entry saved: "${entry.name}"`);
+    res.json({ entry });
+  });
+
+  // ── SSE Event Stream ───────────────────────────────────────────────────────
+  app.get("/api/events/stream", (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.flushHeaders();
+
+    // Send last 20 events on connect
+    eventQueue.slice(0, 20).reverse().forEach(ev => {
+      res.write(`data: ${JSON.stringify(ev)}\n\n`);
+    });
+
+    sseClients.push(res);
+
+    // Keep-alive ping every 15s
+    const ping = setInterval(() => {
+      try { res.write(": ping\n\n"); } catch {}
+    }, 15000);
+
+    req.on("close", () => {
+      clearInterval(ping);
+      const idx = sseClients.indexOf(res);
+      if (idx !== -1) sseClients.splice(idx, 1);
+    });
+  });
+
+  app.get("/api/events/latest", (req: Request, res: Response) => {
+    const limit = Math.min(parseInt(String(req.query.limit) || "20"), 50);
+    res.json({ events: eventQueue.slice(0, limit) });
+  });
+
   let server: ReturnType<typeof app.listen> | null = null;
 
   return {
     start: () => {
       server = app.listen(port, () => {
-        logger.info(`[Dashboard] Live at http://localhost:${port}`);
+        logger.info(`[Dashboard] Wealth Command Center: http://localhost:${port}`);
+        logger.info(`[Dashboard] Ops view: http://localhost:${port}/ops`);
+        logger.info(`[Dashboard] API metrics: http://localhost:${port}/api/metrics`);
       });
     },
-    stop: () => { server?.close(); },
+    stop: () => {
+      sseClients.forEach(c => { try { c.end(); } catch {} });
+      server?.close();
+    },
   };
 }

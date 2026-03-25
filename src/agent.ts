@@ -21,6 +21,7 @@ import { PhaseTracker } from "./scaling/phases";
 import {
   createDashboardServer,
   updateNestedMetrics,
+  pushDashboardEvent,
 } from "./dashboard/server";
 import { logger } from "./utils/logger";
 
@@ -110,12 +111,18 @@ export class CashClawAgent {
       logger.warn("Wallet balance is low — fund before accepting ETH tasks");
     }
 
+    pushDashboardEvent("INFO", `CashClaw ${this.config.agentId} starting up`);
+
     // 3. Connect to PaperClip Pantheon (non-blocking — runs standalone if unreachable)
     const pantheonConnected = await this.pantheon.connect();
     updateNestedMetrics("pantheon", {
       connected: pantheonConnected,
       lastHeartbeat: pantheonConnected ? new Date().toISOString() : "",
     });
+    pushDashboardEvent(
+      pantheonConnected ? "INFO" : "WARN",
+      `Pantheon: ${pantheonConnected ? "CONNECTED to PaperClip" : "standalone mode"}`
+    );
 
     // 4. Sync Stripe products (WHOP is read-only — managed at whop.com/real-estate-automations)
     if (this.stripe) {
@@ -353,6 +360,7 @@ export class CashClawAgent {
       if (ok) {
         this.stats.tasksCompleted++;
         this.accumulateEarnings(priceEth);
+        pushDashboardEvent("EXEC", `Task complete: ${task.title} (+${priceEth} ETH)`);
 
         // Report revenue to Hermes (CFO) via Pantheon
         await this.pantheon.reportRevenue({
@@ -367,6 +375,7 @@ export class CashClawAgent {
       }
     } catch (error) {
       this.stats.tasksFailed++;
+      pushDashboardEvent("ERROR", `Task failed: ${task.title}`);
       logger.error(`Task ${task.id} failed`, { error });
     } finally {
       this.activeTasks.delete(task.id);
