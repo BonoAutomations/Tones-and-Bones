@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tones-and-Bones – Wealth Command Center</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0df246",
+            "background-light": "#f5f8f6",
+            "background-dark": "#0A0A0A",
+            surface: "#141414",
+            "surface-hover": "#1F1F1F",
+            "border-color": "#2A2A2A",
+            "text-main": "#F5F5F0",
+            "text-muted": "#70706B",
+            danger: "#B83B3B",
+          },
+          fontFamily: { display: ["Space Grotesk", "sans-serif"] },
+          borderRadius: {
+            DEFAULT: "0.125rem", sm: "0.25rem", lg: "0.5rem",
+            xl: "0.75rem", full: "9999px",
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #70706B; }
+
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    .shimmer {
+      animation: shimmer 2s infinite linear;
+      background: linear-gradient(to right, #141414 4%, #1F1F1F 25%, #141414 36%);
+      background-size: 1000px 100%;
+    }
+    .entry { border-bottom: 1px solid rgba(112,112,107,0.25); padding-bottom: 8px; margin-bottom: 8px; }
+    .entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .check-item { border-left: 2px solid rgba(13,242,70,0.4); padding-left: 0.5rem; }
+    .empty { color: #70706B; font-style: italic; }
+    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+    .dot-green { background: #0df246; box-shadow: 0 0 6px #0df246; }
+    .dot-yellow { background: #ffd700; }
+    .dot-red { background: #B83B3B; box-shadow: 0 0 6px #B83B3B; }
+    .dot-blue { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; }
+  </style>
+</head>
+
+<body class="bg-background-dark text-text-main h-screen overflow-hidden flex flex-col font-display selection:bg-primary/30">
+
+<main class="flex-1 flex overflow-hidden">
+
+  <!-- LEFT: NAV + WEALTH METRICS -->
+  <aside class="w-[280px] border-r border-border-color bg-surface flex flex-col overflow-y-auto">
+    <div class="p-4 flex flex-col gap-1">
+      <h1 class="text-lg font-semibold tracking-tight">Tones-and-Bones</h1>
+      <p class="text-text-muted text-xs uppercase tracking-widest">Wealth Command Center</p>
+      <div id="agentBadge" class="mt-2 text-[11px] px-2 py-1 rounded-sm border border-border-color text-text-muted bg-background-dark flex items-center gap-1">
+        <span class="status-dot dot-yellow" id="agentDot"></span>
+        <span id="agentStatusText">Connecting…</span>
+      </div>
+    </div>
+
+    <nav class="px-2 py-1 flex flex-col gap-1">
+      <a href="#" onclick="showSection('research')" id="nav-research" class="flex items-center gap-2 px-2 py-2 rounded-sm bg-primary/10 text-primary border border-primary/20">
+        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1;">insights</span>
+        <span class="text-sm font-medium">Wealth Dashboard</span>
+      </a>
+      <a href="#" onclick="showSection('cashclaw')" id="nav-cashclaw" class="flex items-center gap-2 px-2 py-2 rounded-sm text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors">
+        <span class="material-symbols-outlined text-[18px]">bolt</span>
+        <span class="text-sm font-medium">CashClaw Agent</span>
+      </a>
+      <a href="#" onclick="showSection('leads')" id="nav-leads" class="flex items-center gap-2 px-2 py-2 rounded-sm text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors">
+        <span class="material-symbols-outlined text-[18px]">group</span>
+        <span class="text-sm font-medium">Lead Pipeline</span>
+      </a>
+      <a href="#" onclick="showSection('scaling')" id="nav-scaling" class="flex items-center gap-2 px-2 py-2 rounded-sm text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors">
+        <span class="material-symbols-outlined text-[18px]">monitoring</span>
+        <span class="text-sm font-medium">Scaling Phases</span>
+      </a>
+    </nav>
+
+    <div class="mt-auto p-4 flex flex-col gap-2">
+      <h2 class="text-text-muted text-xs uppercase tracking-widest mb-1">Revenue Snapshot</h2>
+      <div class="border border-border-color rounded-sm p-3 bg-background-dark hover:border-primary/50 transition-colors">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-text-muted text-xs">ETH Earned</span>
+          <span class="text-primary text-[11px] font-medium" id="sideEthChange">Moltlaunch</span>
+        </div>
+        <div class="text-text-main text-xl font-semibold tracking-tight" id="sideEthEarned">0.000000 ETH</div>
+      </div>
+      <div class="border border-border-color rounded-sm p-3 bg-background-dark hover:border-primary/50 transition-colors">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-text-muted text-xs">USD This Month</span>
+          <span class="text-primary text-[11px] font-medium" id="sideStripeMode">Stripe</span>
+        </div>
+        <div class="text-text-main text-xl font-semibold tracking-tight" id="sideMonthlyUsd">$0.00</div>
+      </div>
+      <div class="border border-border-color rounded-sm p-3 bg-background-dark hover:border-primary/50 transition-colors">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-text-muted text-xs">Whop Orders</span>
+          <span class="text-primary text-[11px] font-medium">Read-only</span>
+        </div>
+        <div class="text-text-main text-xl font-semibold tracking-tight" id="sideWhopOrders">0</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER: MAIN CONTENT AREA -->
+  <section class="flex-1 flex flex-col min-w-0 bg-background-dark overflow-hidden">
+    <header class="border-b border-border-color bg-surface/60 backdrop-blur px-4 py-2 flex justify-between items-center shrink-0">
+      <div>
+        <h2 class="text-sm font-medium flex items-center gap-2" id="sectionTitle">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(13,242,70,0.5)]"></span>
+          Research &amp; Idea Workspace
+        </h2>
+        <p class="text-[11px] text-text-muted" id="sectionSubtitle">Risk-aware market intelligence for equities, crypto, macro, and sports-betting.</p>
+      </div>
+      <div class="flex items-center gap-2 text-[11px] text-text-muted">
+        <span class="material-symbols-outlined text-[14px] text-primary">shield_lock</span>
+        Education &amp; research only – not financial advice.
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+
+      <!-- ── SECTION: RESEARCH (default) ────────────────────────────────── -->
+      <div id="section-research" class="space-y-4">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <section class="border border-border-color rounded-sm bg-surface p-3 flex flex-col">
+            <header class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted">Market Themes</h3>
+              <span class="text-[11px] text-text-muted">Equities</span>
+            </header>
+            <div id="marketCards" class="space-y-2 text-sm">
+              <div class="shimmer h-16 rounded-sm"></div>
+            </div>
+          </section>
+          <section class="border border-border-color rounded-sm bg-surface p-3 flex flex-col">
+            <header class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted">Crypto Structuring</h3>
+              <span class="text-[11px] text-text-muted">On-chain &amp; derivatives</span>
+            </header>
+            <div id="cryptoCards" class="space-y-2 text-sm">
+              <div class="shimmer h-16 rounded-sm"></div>
+            </div>
+          </section>
+          <section class="border border-border-color rounded-sm bg-surface p-3 flex flex-col">
+            <header class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted">Betting &amp; Edges</h3>
+              <span class="text-[11px] text-text-muted">Sports &amp; specials</span>
+            </header>
+            <div id="bettingCards" class="space-y-2 text-sm">
+              <div class="shimmer h-16 rounded-sm"></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <section class="border border-border-color rounded-sm bg-surface p-3 flex flex-col">
+            <header class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted">Wallet Readiness</h3>
+              <span class="text-[11px] text-text-muted">Capital, risk, ops</span>
+            </header>
+            <div id="walletChecklist" class="space-y-2 text-sm">
+              <div class="shimmer h-20 rounded-sm"></div>
+            </div>
+          </section>
+
+          <section class="border border-border-color rounded-sm bg-surface p-3 flex flex-col">
+            <header class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted">File Summarizer</h3>
+              <span class="text-[11px] text-text-muted">Upload notes, decks, CSVs</span>
+            </header>
+            <input id="fileInput" type="file" multiple
+              class="mt-1 block w-full text-[11px] text-text-main border border-border-color bg-background-dark rounded-sm file:bg-surface-hover file:border-0 file:text-[11px] file:px-3 file:py-1 file:text-text-main" />
+            <div id="fileSummary" class="mt-3 text-xs text-text-muted italic">No file uploaded yet.</div>
+          </section>
+        </div>
+
+        <section class="border border-border-color rounded-sm bg-surface p-3 flex flex-col">
+          <header class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted">Idea Journal</h3>
+              <p class="text-[11px] text-text-muted">Capture thesis, risk, and timestamps.</p>
+            </div>
+          </header>
+          <form id="journalForm" class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3 text-xs">
+            <input id="ideaName" type="text" required placeholder="Name – e.g. BTC breakout watch"
+              class="bg-background-dark border border-border-color rounded-sm px-2 py-1 focus:ring-1 focus:ring-primary/60 focus:outline-none" />
+            <input id="ideaThesis" type="text" required placeholder="Thesis – price holds above resistance"
+              class="bg-background-dark border border-border-color rounded-sm px-2 py-1 focus:ring-1 focus:ring-primary/60 focus:outline-none" />
+            <input id="ideaRisk" type="text" required placeholder="Risk – break below support kills setup"
+              class="bg-background-dark border border-border-color rounded-sm px-2 py-1 focus:ring-1 focus:ring-primary/60 focus:outline-none" />
+            <button type="submit"
+              class="col-span-1 md:col-span-3 inline-flex items-center justify-center mt-1 px-3 py-1 rounded-sm bg-primary text-[11px] font-semibold text-black hover:bg-emerald-400 transition-colors">
+              Save Journal Entry
+            </button>
+          </form>
+          <div id="journalEntries" class="text-xs text-text-muted italic">No entries yet.</div>
+        </section>
+      </div>
+
+      <!-- ── SECTION: CASHCLAW AGENT ──────────────────────────────────────── -->
+      <div id="section-cashclaw" class="hidden space-y-4">
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">Status</div>
+            <div class="text-2xl font-semibold text-primary" id="cc-status">—</div>
+          </div>
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">Active Tasks</div>
+            <div class="text-2xl font-semibold" id="cc-active">—</div>
+          </div>
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">Completed</div>
+            <div class="text-2xl font-semibold text-primary" id="cc-completed">—</div>
+          </div>
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">Failed</div>
+            <div class="text-2xl font-semibold text-danger" id="cc-failed">—</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted mb-3">Revenue Channels</h3>
+            <div class="space-y-2 text-sm" id="cc-revenue"></div>
+          </div>
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted mb-3">Pantheon Bridge</h3>
+            <div class="space-y-2 text-sm" id="cc-pantheon"></div>
+          </div>
+        </div>
+        <div class="border border-border-color rounded-sm bg-surface p-3">
+          <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted mb-3">Social Engine</h3>
+          <div class="grid grid-cols-3 gap-4 text-sm" id="cc-social"></div>
+        </div>
+      </div>
+
+      <!-- ── SECTION: LEAD PIPELINE ──────────────────────────────────────── -->
+      <div id="section-leads" class="hidden space-y-4">
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">Total Leads</div>
+            <div class="text-2xl font-semibold" id="ld-total">—</div>
+          </div>
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">AI Scored</div>
+            <div class="text-2xl font-semibold text-blue-400" id="ld-scored">—</div>
+          </div>
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">Hot Leads</div>
+            <div class="text-2xl font-semibold text-primary" id="ld-hot">—</div>
+          </div>
+          <div class="border border-border-color rounded-sm bg-surface p-3">
+            <div class="text-[11px] text-text-muted uppercase tracking-widest mb-1">Warm (Nurture)</div>
+            <div class="text-2xl font-semibold text-yellow-400" id="ld-warm">—</div>
+          </div>
+        </div>
+        <div class="border border-border-color rounded-sm bg-surface p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted mb-2">About the Pipeline</h3>
+          <p class="text-sm text-text-muted">Leads enter via GHL webhooks, Whop purchases, referrals, or manual entry. Claude AI scores each lead as hot/warm/cold, then syncs qualified leads to GoHighLevel CRM. No external scraping.</p>
+        </div>
+      </div>
+
+      <!-- ── SECTION: SCALING PHASES ─────────────────────────────────────── -->
+      <div id="section-scaling" class="hidden space-y-4">
+        <div class="border border-primary/30 rounded-sm bg-surface p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="text-[11px] text-text-muted uppercase tracking-widest">Current Phase</div>
+              <div class="text-xl font-bold text-primary" id="sc-phaseName">—</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[11px] text-text-muted">KPI Progress</div>
+              <div class="text-lg font-semibold" id="sc-kpi">—</div>
+            </div>
+          </div>
+          <div class="w-full bg-background-dark rounded-full h-2 overflow-hidden">
+            <div id="sc-bar" class="h-full bg-gradient-to-r from-primary to-blue-400 rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="border border-border-color rounded-sm bg-surface p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted mb-3">Open Milestones</h3>
+          <div id="sc-milestones" class="space-y-1 text-sm text-text-muted italic">Loading…</div>
+        </div>
+        <div class="border border-border-color rounded-sm bg-surface p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-widest text-text-muted mb-3">5-Phase Roadmap</h3>
+          <div class="space-y-2 text-xs text-text-muted">
+            <div class="flex items-center gap-2"><span class="text-primary font-bold">Phase 1</span> Lock San Diego — 10 customers</div>
+            <div class="flex items-center gap-2"><span class="font-bold">Phase 2</span> Expand SoCal — $1,000 MRR</div>
+            <div class="flex items-center gap-2"><span class="font-bold">Phase 3</span> Statewide — $5,000 MRR</div>
+            <div class="flex items-center gap-2"><span class="font-bold">Phase 4</span> National — $10,000 MRR</div>
+            <div class="flex items-center gap-2"><span class="font-bold">Phase 5</span> Cross-Vertical — $25,000 MRR</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- RIGHT: SYSTEM HEALTH + EVENT STREAM -->
+  <aside class="w-[300px] border-l border-border-color bg-surface flex flex-col shrink-0">
+    <div class="px-4 py-2 border-b border-border-color flex items-center justify-between">
+      <h2 class="text-sm font-medium">System Health</h2>
+      <span id="healthBadge" class="text-[11px] text-text-muted">Checking…</span>
+    </div>
+
+    <div class="p-4 flex flex-col gap-3">
+      <div id="tile-agent" class="flex items-center justify-between p-3 border border-border-color rounded-sm bg-background-dark">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-medium">CashClaw Agent</span>
+          <span class="text-[11px] text-text-muted" id="tile-agent-sub">Agent 32180</span>
+        </div>
+        <div class="w-2 h-2 rounded-full bg-yellow-400" id="tile-agent-dot"></div>
+      </div>
+      <div id="tile-pantheon" class="flex items-center justify-between p-3 border border-border-color rounded-sm bg-background-dark">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-medium">Pantheon Bridge</span>
+          <span class="text-[11px] text-text-muted" id="tile-pantheon-sub">PaperClip :3100</span>
+        </div>
+        <div class="w-2 h-2 rounded-full bg-text-muted" id="tile-pantheon-dot"></div>
+      </div>
+      <div id="tile-stripe" class="flex items-center justify-between p-3 border border-border-color rounded-sm bg-background-dark">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-medium">Stripe</span>
+          <span class="text-[11px]" id="tile-stripe-sub">Checking…</span>
+        </div>
+        <div class="w-2 h-2 rounded-full bg-text-muted" id="tile-stripe-dot"></div>
+      </div>
+      <div id="tile-x" class="flex items-center justify-between p-3 border border-border-color rounded-sm bg-background-dark">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-medium">X / Twitter</span>
+          <span class="text-[11px] text-text-muted" id="tile-x-sub">@AiSales2782 / @Bono_1033</span>
+        </div>
+        <div class="w-2 h-2 rounded-full bg-text-muted" id="tile-x-dot"></div>
+      </div>
+    </div>
+
+    <!-- Live Event Stream -->
+    <div class="border-t border-border-color flex-1 flex flex-col min-h-0">
+      <div class="border-b border-border-color bg-surface/70 px-3 py-2 flex justify-between items-center">
+        <h3 class="text-xs font-medium flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(13,242,70,0.5)]"></span>
+          Live Event Stream
+        </h3>
+        <button onclick="clearEvents()" class="text-[10px] text-text-muted hover:text-text-main">Clear</button>
+      </div>
+      <div id="eventStream" class="flex-1 overflow-y-auto p-2 flex flex-col gap-0.5 font-mono text-[10px]">
+        <div class="flex gap-2 py-1 px-2 text-text-muted">
+          <span class="shrink-0 opacity-50">—</span>
+          <span>Waiting for events…</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- FOOTER COMMAND BAR -->
+<footer class="border-t border-border-color bg-surface h-[48px] flex items-center px-4 shrink-0">
+  <div class="flex items-center gap-2 w-full max-w-[900px]">
+    <span class="material-symbols-outlined text-text-muted text-[18px]">terminal</span>
+    <input id="cmdInput" type="text" autocomplete="off" spellcheck="false"
+      placeholder="Command > e.g. 'refresh research', 'new journal entry BTC breakout | price above 80k | loses 78k support'..."
+      class="w-full bg-transparent border-none text-sm text-text-main placeholder:text-text-muted/50 focus:ring-0 p-0 font-mono" />
+    <div class="flex gap-1">
+      <kbd class="px-1.5 py-0.5 border border-border-color rounded-[2px] text-[10px] text-text-muted font-mono bg-background-dark">↵</kbd>
+    </div>
+  </div>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "name": "Tones-and-Bones Skills",
+  "description": "8 Hermes-compatible skill advisors for luxury real estate sales and marketing automation",
+  "version": "1.0.0",
+  "author": "Bono G — ASAM Brain Series",
+  "commands": [
+    {
+      "name": "luxury-positioning",
+      "description": "Define and articulate a premium brand position for a luxury listing or agent identity. Outputs positioning statement, differentiators, and messaging pillars.",
+      "skillPath": "skills/luxury-positioning/SKILL.md"
+    },
+    {
+      "name": "ideal-client-profile",
+      "description": "Build a detailed Ideal Client Profile (ICP) for luxury real estate. Outputs demographics, psychographics, pain points, buying triggers, and targeting channels.",
+      "skillPath": "skills/ideal-client-profile/SKILL.md"
+    },
+    {
+      "name": "brand-story",
+      "description": "Craft a compelling brand narrative for a luxury agent, team, or property. Outputs origin story, values statement, and 3 brand voice examples.",
+      "skillPath": "skills/brand-story/SKILL.md"
+    },
+    {
+      "name": "sales-funnel",
+      "description": "Design a full luxury buyer/seller sales funnel. Outputs funnel stages, conversion actions, touchpoints, and automation triggers.",
+      "skillPath": "skills/sales-funnel/SKILL.md"
+    },
+    {
+      "name": "client-experience",
+      "description": "Map and optimize the white-glove client experience. Outputs journey map, service rituals, surprise-and-delight moments, and NPS improvement plan.",
+      "skillPath": "skills/client-experience/SKILL.md"
+    },
+    {
+      "name": "pricing-strategy",
+      "description": "Develop a premium pricing strategy with psychological anchor framing. Outputs tiered pricing model, anchor product, and price objection responses.",
+      "skillPath": "skills/pricing-strategy/SKILL.md"
+    },
+    {
+      "name": "referral-network",
+      "description": "Build a referral and affiliate partner ecosystem. Outputs partner categories, outreach templates, incentive structure, and CRM tagging system.",
+      "skillPath": "skills/referral-network/SKILL.md"
+    },
+    {
+      "name": "automation-audit",
+      "description": "Audit the current CRM and marketing automation stack. Outputs gap analysis, automation score, GHL workflow recommendations, and 30-day fix list.",
+      "skillPath": "skills/automation-audit/SKILL.md"
+    }
+  ]
+}
