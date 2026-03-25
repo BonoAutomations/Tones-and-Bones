@@ -66,6 +66,33 @@ curl -s -X POST http://127.0.0.1:8000/api/uploads/summarize \
 ./scripts/smoke-test.sh
 ```
 
+
+## OpenClaw bot/build integration
+
+This repository now includes copy-paste commands to clone and build OpenClaw (`https://github.com/openclaw/openclaw.git`) as part of the local build workflow.
+
+### Build OpenClaw
+
+```bash
+npm run build:openclaw
+```
+
+### Run OpenClaw (after build)
+
+```bash
+npm run run:openclaw
+```
+
+### Manual one-liner (no npm wrapper)
+
+```bash
+./scripts/build-openclaw.sh
+```
+
+> Notes:
+> - OpenClaw may require system packages (SDL2/OpenGL/audio libs) depending on your OS.
+> - Source is cloned into `third_party/openclaw` and is gitignored by default.
+
 ## Available backend endpoints
 
 - `GET /api/health` — basic health probe.
