@@ -1,0 +1,12 @@
+{
+  "name": "tones-and-bones",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Risk-aware market intelligence workspace with a lightweight Node backend.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check app.js",
+    "build:openclaw": "bash ./scripts/build-openclaw.sh",
+    "run:openclaw": "bash ./scripts/run-openclaw.sh"
+  }
+}
