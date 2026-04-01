@@ -1,6 +1,6 @@
 ---
 name: luxury-positioning
-description: Define your luxury market position — what you stand for, who you're for, and why clients choose you over anyone else. Use when starting your brand or when your positioning feels unclear or commoditized.
+description: Use when the brand is competing on price instead of identity, when ideal clients can't articulate why they chose you, or when a competitor has moved into your space and the position needs defending.
 version: 1.0.0
 author: Tones and Bones
 license: MIT

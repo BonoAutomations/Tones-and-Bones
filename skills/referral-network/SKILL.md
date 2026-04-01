@@ -1,6 +1,6 @@
 ---
 name: referral-network
-description: Build a referral ecosystem that consistently brings your best clients to you — through strategic relationships, not luck. Use when growth feels unpredictable, when you rely too heavily on one source, or when you want to reduce your dependence on cold marketing.
+description: Use when referrals come from fewer than 3 sources, when growth requires active outbound marketing, when past clients aren't introducing new ones, or when professional referrers in the client's ecosystem don't know the brand well enough to recommend it.
 version: 1.0.0
 author: Tones and Bones
 license: MIT

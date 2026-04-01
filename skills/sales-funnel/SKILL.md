@@ -1,6 +1,6 @@
 ---
 name: sales-funnel
-description: Design a luxury sales funnel that converts high-net-worth leads without feeling pushy — from first awareness to signed contract. Use when your sales process feels inconsistent, too manual, or unconverted.
+description: Use when close rate is below 50%, when qualified leads go quiet after the first call, when the sales process requires convincing, or when the first client touchpoint feels like a pitch.
 version: 1.0.0
 author: Tones and Bones
 license: MIT

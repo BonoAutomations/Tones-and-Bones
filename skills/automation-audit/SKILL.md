@@ -1,6 +1,6 @@
 ---
 name: automation-audit
-description: Audit your current sales and marketing automation to identify what's saving you time, what's costing you clients, and what's missing. Use when your systems feel scattered, when follow-ups fall through cracks, or when you're ready to scale without hiring.
+description: Use when follow-ups are being missed, when onboarding takes more than 48 hours, when the team can't state the current pipeline stage of every active lead, or when adding clients requires adding headcount.
 version: 1.0.0
 author: Tones and Bones
 license: MIT

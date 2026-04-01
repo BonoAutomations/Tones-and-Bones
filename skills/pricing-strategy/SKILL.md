@@ -1,6 +1,6 @@
 ---
 name: pricing-strategy
-description: Set and defend premium pricing that reflects your value, attracts serious clients, and grows your revenue without more hours. Use when you feel undercharged, when clients push back on price, or when you're ready to raise your rates.
+description: Use when discounting has happened, when price objections are common, when the service offer lacks a clear tier structure, or when the close rate exceeds 80% (a signal the price is too low).
 version: 1.0.0
 author: Tones and Bones
 license: MIT

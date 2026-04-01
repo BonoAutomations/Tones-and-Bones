@@ -1,6 +1,6 @@
 ---
 name: ideal-client-profile
-description: Build a razor-sharp profile of your ideal luxury client — beyond demographics, into psychology, values, and buying triggers. Use when your marketing feels generic or you're attracting the wrong type of client.
+description: Use when attracting the wrong clients, when marketing feels like it's speaking to everyone and converting no one, or when the brand can't define who it will not work with.
 version: 1.0.0
 author: Tones and Bones
 license: MIT

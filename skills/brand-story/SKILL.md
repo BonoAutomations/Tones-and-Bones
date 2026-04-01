@@ -1,6 +1,6 @@
 ---
 name: brand-story
-description: Craft the narrative that makes your luxury brand magnetic — the origin, the philosophy, and the why that clients connect with on an emotional level. Use when your brand feels transactional or forgettable.
+description: Use when the brand's About page reads like a resume, when clients can't repeat the brand's story back to others, or when the founder's origin hasn't been shaped into a narrative that drives referrals.
 version: 1.0.0
 author: Tones and Bones
 license: MIT

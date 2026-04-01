@@ -1,6 +1,6 @@
 ---
 name: client-experience
-description: Design the white-glove client journey from first inquiry to final delivery and beyond — every touchpoint, every detail. Use when clients aren't referring others, when reviews feel generic, or when the experience feels inconsistent.
+description: Use when referral rate is low, when client reviews are polite but don't generate new clients, when onboarding takes more than 48 hours, or when there is no defined touchpoint after project delivery.
 version: 1.0.0
 author: Tones and Bones
 license: MIT
