@@ -40,6 +40,7 @@ Invoke relevant skills BEFORE any response or action. Even 1% relevance means in
 
 | Skill | Invoke when... |
 |---|---|
+| `repomix` | Task touches more than 3 files, requires full company or codebase context, or a subagent needs to be briefed on the whole repo |
 | `luxury-brainstorming` | User wants to start a new campaign, initiative, brand project, or strategy — before any output is created |
 | `luxury-positioning` | Brand feels commoditized, position is unclear, or positioning hasn't been defined |
 | `ideal-client-profile` | Wrong clients are showing up, marketing feels generic, or client archetypes haven't been profiled |

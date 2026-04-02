@@ -1,0 +1,38 @@
+{
+  "output": {
+    "filePath": "repomix-output.md",
+    "style": "markdown",
+    "headerText": "Tones and Bones — Luxury Sales and Marketing Automation\nThis file contains the complete company operating system: mission, agent org chart, all 10 skills, and project templates.\nUse it to give an AI full context about the company before any strategy, campaign, or automation task.",
+    "instructionFilePath": "COMPANY.md",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "showLineNumbers": false,
+    "copyToClipboard": false,
+    "includeEmptyDirectories": false
+  },
+  "include": [
+    "COMPANY.md",
+    "AGENTS.md",
+    "README.md",
+    ".claude-plugin/plugin.json",
+    "skills/**/*.md",
+    "projects/**/*.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "repomix-output.*",
+      "node_modules/**",
+      ".git/**",
+      "docs/briefs/**",
+      "docs/superpowers/**"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}

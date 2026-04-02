@@ -1,12 +1,13 @@
 {
   "name": "tones-and-bones",
   "description": "Claude Code skills for luxury sales and marketing automation. Frameworks for attracting high-net-worth clients, building a premium brand, and automating your sales process without sacrificing the personal touch.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Tones and Bones",
   "repository": "https://github.com/bonoautomations/tones-and-bones",
   "license": "MIT",
   "skills": [
     { "name": "using-tones-and-bones", "command": "/using-tones-and-bones" },
+    { "name": "repomix", "command": "/repomix" },
     { "name": "luxury-brainstorming", "command": "/luxury-brainstorming" },
     { "name": "luxury-positioning", "command": "/luxury-positioning" },
     { "name": "ideal-client-profile", "command": "/ideal-client-profile" },
