@@ -1,0 +1,109 @@
+# ─────────────────────────────────────────────
+#  Tones & Bones — Sneaker Agency Configuration
+# ─────────────────────────────────────────────
+
+# ── API Keys ──────────────────────────────────
+captcha:
+  provider: "2captcha"          # "2captcha" | "anticaptcha"
+  api_key: "YOUR_2CAPTCHA_KEY"
+
+notifications:
+  discord_webhook: "YOUR_DISCORD_WEBHOOK_URL"
+  notify_on_success: true
+  notify_on_failure: true
+  notify_on_restock: true
+
+# ── Proxies ───────────────────────────────────
+proxies:
+  enabled: true
+  rotate_on_ban: true
+  test_url: "https://www.nike.com"
+  list:
+    # - "http://user:pass@host:port"
+    # - "socks5://user:pass@host:port"
+
+# ── Profiles (add as many as you want) ────────
+profiles:
+  - id: "primary"
+    first_name: "Jordan"
+    last_name: "Smith"
+    email: "your@email.com"
+    phone: "5551234567"
+    address_1: "123 Main St"
+    address_2: ""
+    city: "New York"
+    state: "NY"
+    zip: "10001"
+    country: "US"
+    card_number: "4111111111111111"
+    card_expiry: "12/28"
+    card_cvv: "123"
+    card_holder: "Jordan Smith"
+
+# ── Tasks ─────────────────────────────────────
+# Each task targets a specific shoe on a specific retailer.
+# Sizes: "US 10", "US 10.5", ["US 9", "US 9.5", "US 10"]  (first available)
+# Mode: "safe" (human-like delays) | "fast" (max speed)
+tasks:
+  - id: "task-001"
+    enabled: true
+    retailer: "nike"
+    product_url: "https://www.nike.com/launch/t/example-shoe"
+    style_code: "DZ5485-001"
+    sizes: ["US 10", "US 10.5", "US 11"]
+    quantity: 1
+    profile_id: "primary"
+    mode: "safe"
+
+  - id: "task-002"
+    enabled: false
+    retailer: "adidas"
+    product_url: "https://www.adidas.com/us/example-shoe"
+    style_code: "GY3838"
+    sizes: ["US 10"]
+    quantity: 1
+    profile_id: "primary"
+    mode: "safe"
+
+  - id: "task-003"
+    enabled: false
+    retailer: "shopify"
+    product_url: "https://some-boutique.com/products/example-shoe"
+    sizes: ["10"]
+    quantity: 1
+    profile_id: "primary"
+    mode: "fast"
+    # optional: shopify variant IDs (faster than scraping)
+    variant_ids: []
+
+# ── Monitor ───────────────────────────────────
+# Watches release calendars and auto-creates tasks when drops match keywords.
+monitor:
+  enabled: true
+  check_interval_seconds: 60
+  keywords:
+    - "Jordan 1"
+    - "Yeezy 350"
+    - "Nike Dunk"
+    - "New Balance 990"
+  sizes: ["US 10", "US 10.5"]
+  profile_id: "primary"
+  retailers:
+    - "nike"
+    - "adidas"
+    - "footlocker"
+
+# ── Bot Settings ──────────────────────────────
+bot:
+  # How many tasks to run in parallel
+  max_concurrent_tasks: 3
+  # Seconds before drop to start warming up sessions
+  warm_up_lead_seconds: 300
+  # Browser: "chromium" | "firefox" | "webkit"
+  browser: "chromium"
+  headless: true
+  # Random human-like delay range (ms) between actions in "safe" mode
+  safe_delay_min_ms: 300
+  safe_delay_max_ms: 900
+  # Max retries per task before giving up
+  max_retries: 5
