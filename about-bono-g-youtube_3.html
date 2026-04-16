@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Bono G — YouTube Hub</title>
+  <meta name="description" content="Fully functional local YouTube hub for Bono G with featured videos, quick links, and persistent tools." />
+  <style>
+    :root {
+      --bg: #0e1118;
+      --card: #151a24;
+      --card-2: #1a2030;
+      --text: #edf1f8;
+      --muted: #9ea8bd;
+      --accent: #ff0033;
+      --accent-2: #2a7bff;
+      --border: #2d3649;
+      --ok: #1ea867;
+      --warn: #ff8b8b;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f4f7fc;
+      --card: #ffffff;
+      --card-2: #f8faff;
+      --text: #131a2c;
+      --muted: #57647d;
+      --accent: #d70031;
+      --accent-2: #185fe6;
+      --border: #dde4f0;
+      --ok: #16844f;
+      --warn: #c63b3b;
+      --shadow: 0 8px 22px rgba(26, 47, 89, .12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font: 16px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 650px at 10% 0%, rgba(42, 123, 255, .15), transparent 60%),
+                  radial-gradient(1000px 600px at 100% 0%, rgba(255, 0, 51, .12), transparent 62%),
+                  var(--bg);
+      min-height: 100vh;
+    }
+
+    .wrap { width: min(1120px, 92vw); margin: 0 auto; padding: 28px 0 56px; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .2px; }
+    .dot { width: 12px; height: 12px; border-radius: 999px; background: linear-gradient(135deg, var(--accent), #ff8d00); box-shadow: 0 0 0 6px rgba(255,0,51,.18); }
+
+    .toolbar, .quick-links { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .panel {
+      background: linear-gradient(150deg, rgba(255,255,255,.02), rgba(255,255,255,.005)), var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero { padding: 20px; margin-bottom: 14px; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.5rem, 2.6vw, 2.2rem); }
+    h2 { margin: 0 0 10px; font-size: 1.1rem; }
+    p { margin: 0; }
+    .lead { color: var(--muted); max-width: 70ch; }
+
+    .btn, .chip {
+      border: 1px solid var(--border);
+      background: var(--card-2);
+      color: var(--text);
+      border-radius: 11px;
+      padding: 9px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: .18s ease;
+      font-size: .92rem;
+    }
+    .btn:hover, .chip:hover { transform: translateY(-1px); border-color: var(--accent-2); }
+    .btn.primary { background: var(--accent); border-color: transparent; color: white; }
+    .btn.alt { background: var(--accent-2); border-color: transparent; color: white; }
+
+    .controls {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 8px;
+    }
+
+    input[type="text"], textarea {
+      width: 100%; border: 1px solid var(--border); background: transparent;
+      color: var(--text); border-radius: 11px; padding: 10px 12px; outline: none;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: var(--accent-2); }
+
+    .status { margin-top: 10px; min-height: 1.2em; color: var(--ok); font-size: .92rem; }
+    .status.warn { color: var(--warn); }
+
+    .split { display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; margin-top: 14px; }
+    .box { padding: 14px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-top: 10px; }
+    .card { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); }
+    .card iframe { width: 100%; border: 0; aspect-ratio: 16 / 9; background: #000; }
+    .meta { padding: 10px; }
+    .title { margin: 0 0 6px; font-size: .98rem; }
+    .note { margin: 0 0 8px; color: var(--muted); font-size: .9rem; }
+
+    .helper { color: var(--muted); font-size: .87rem; margin-top: 8px; }
+    .footer { margin-top: 16px; color: var(--muted); font-size: .9rem; }
+
+    @media (max-width: 900px) {
+      .split { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 620px) {
+      .controls { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <div class="brand"><span class="dot"></span> Bono G — YouTube Hub</div>
+      <div class="toolbar">
+        <button id="themeToggle" class="btn" type="button">Toggle theme</button>
+        <button id="copyShare" class="btn" type="button">Copy page link</button>
+      </div>
+    </header>
+
+    <section class="hero panel" aria-labelledby="about-title">
+      <h1 id="about-title">About Bono G</h1>
+      <p class="lead">Refined and fully functional local page with quick external links, reliable YouTube URL parsing, persistent custom video list, import/export tools, and responsive layout. Works directly from file or local server.</p>
+
+      <div class="controls">
+        <input id="videoInput" type="text" placeholder="Paste YouTube URL or 11-char ID (supports watch, youtu.be, shorts, embed)" aria-label="YouTube URL or ID" />
+        <button id="addVideo" class="btn primary" type="button">Add video</button>
+        <button id="resetVideos" class="btn" type="button">Reset defaults</button>
+        <button id="openAll" class="btn alt" type="button">Open all on YouTube</button>
+      </div>
+      <div id="status" class="status" aria-live="polite"></div>
+    </section>
+
+    <section class="split">
+      <div class="panel box">
+        <h2>Featured Videos</h2>
+        <div id="videoGrid" class="grid" aria-live="polite"></div>
+      </div>
+
+      <aside class="panel box">
+        <h2>Quick Links</h2>
+        <div class="quick-links">
+          <a class="chip" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube Home</a>
+          <a class="chip" href="https://www.youtube.com/results?search_query=Bono+G" target="_blank" rel="noopener noreferrer">Search Bono G</a>
+          <a class="chip" href="https://www.youtube.com/feed/subscriptions" target="_blank" rel="noopener noreferrer">Subscriptions</a>
+          <a class="chip" href="https://www.youtube.com/feed/trending" target="_blank" rel="noopener noreferrer">Trending</a>
+          <a class="chip" href="https://studio.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube Studio</a>
+        </div>
+
+        <h2 style="margin-top:16px;">Backup / Restore</h2>
+        <textarea id="jsonArea" rows="7" placeholder="Exported JSON appears here"></textarea>
+        <div class="quick-links" style="margin-top:8px;">
+          <button id="exportJson" class="btn" type="button">Export JSON</button>
+          <button id="importJson" class="btn" type="button">Import JSON</button>
+          <button id="clearJson" class="btn" type="button">Clear box</button>
+        </div>
+        <p class="helper">JSON format: [{"id":"VIDEO_ID","title":"...","note":"..."}]</p>
+      </aside>
+    </section>
+
+    <p class="footer">Tip: Videos and theme are saved via localStorage (`bonoGVideos.v2`, `bonoGTheme.v1`).</p>
+  </main>
+
+  <script>
+    const DEFAULT_VIDEOS = [
+      { id: "ysz5S6PUM-U", title: "Bono on Music & Storytelling", note: "Featured interview" },
+      { id: "ScMzIvxBSi4", title: "Creative Process Session", note: "Studio vibes" },
+      { id: "M7lc1UVf-VE", title: "YouTube Player Demo", note: "Official API demo" }
+    ];
+
+    const storageKey = "bonoGVideos.v2";
+    const themeKey = "bonoGTheme.v1";
+
+    const grid = document.getElementById("videoGrid");
+    const statusEl = document.getElementById("status");
+    const input = document.getElementById("videoInput");
+    const addBtn = document.getElementById("addVideo");
+    const resetBtn = document.getElementById("resetVideos");
+    const openAllBtn = document.getElementById("openAll");
+    const copyBtn = document.getElementById("copyShare");
+    const themeToggle = document.getElementById("themeToggle");
+    const exportBtn = document.getElementById("exportJson");
+    const importBtn = document.getElementById("importJson");
+    const clearJsonBtn = document.getElementById("clearJson");
+    const jsonArea = document.getElementById("jsonArea");
+
+    function setStatus(message, ok = true) {
+      statusEl.textContent = message;
+      statusEl.classList.toggle("warn", !ok);
+      clearTimeout(setStatus.timer);
+      if (message) setStatus.timer = setTimeout(() => { statusEl.textContent = ""; statusEl.classList.remove("warn"); }, 3200);
+    }
+
+    function extractVideoId(value) {
+      if (!value) return null;
+      const raw = value.trim();
+      if (/^[\w-]{11}$/.test(raw)) return raw;
+
+      try {
+        const url = new URL(raw);
+        const host = url.hostname.replace(/^www\./, "");
+
+        if (host === "youtube.com" || host === "m.youtube.com") {
+          if (url.pathname === "/watch") {
+            const v = url.searchParams.get("v");
+            if (v && /^[\w-]{11}$/.test(v)) return v;
+          }
+          const shortsMatch = url.pathname.match(/^\/shorts\/([\w-]{11})/);
+          if (shortsMatch) return shortsMatch[1];
+          const embedMatch = url.pathname.match(/^\/embed\/([\w-]{11})/);
+          if (embedMatch) return embedMatch[1];
+        }
+
+        if (host === "youtu.be") {
+          const shortId = url.pathname.replace(/^\//, "").slice(0, 11);
+          if (/^[\w-]{11}$/.test(shortId)) return shortId;
+        }
+      } catch (_) {
+        const fallback = raw.match(/(?:v=|\/embed\/|\.be\/|\/shorts\/)([\w-]{11})/);
+        if (fallback?.[1]) return fallback[1];
+      }
+
+      return null;
+    }
+
+    function sanitizeVideo(obj) {
+      if (!obj || typeof obj !== "object") return null;
+      if (!/^[\w-]{11}$/.test(obj.id)) return null;
+      return {
+        id: obj.id,
+        title: String(obj.title || `Custom video (${obj.id})`).slice(0, 120),
+        note: String(obj.note || "Added manually").slice(0, 180)
+      };
+    }
+
+    function loadVideos() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(storageKey));
+        if (!Array.isArray(parsed) || parsed.length === 0) return [...DEFAULT_VIDEOS];
+        const normalized = parsed.map(sanitizeVideo).filter(Boolean);
+        return normalized.length ? normalized : [...DEFAULT_VIDEOS];
+      } catch (_) {
+        return [...DEFAULT_VIDEOS];
+      }
+    }
+
+    function saveVideos(videos) {
+      localStorage.setItem(storageKey, JSON.stringify(videos));
+    }
+
+    function render(videos) {
+      grid.innerHTML = "";
+      videos.forEach((video, idx) => {
+        const el = document.createElement("article");
+        el.className = "card";
+        el.innerHTML = `
+          <iframe src="https://www.youtube.com/embed/${video.id}" title="${video.title}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <div class="meta">
+            <h3 class="title">${video.title}</h3>
+            <p class="note">${video.note}</p>
+            <div class="quick-links">
+              <a class="btn alt" href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer">Open</a>
+              <button class="btn" type="button" data-remove="${idx}">Remove</button>
+            </div>
+          </div>`;
+        grid.appendChild(el);
+      });
+
+      grid.querySelectorAll("[data-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.remove);
+          videos.splice(idx, 1);
+          if (videos.length === 0) videos.push(...DEFAULT_VIDEOS.map(v => ({ ...v })));
+          saveVideos(videos);
+          render(videos);
+          setStatus("Video removed.");
+        });
+      });
+    }
+
+    const videos = loadVideos();
+    render(videos);
+
+    function addCurrentInput() {
+      const id = extractVideoId(input.value);
+      if (!id) return setStatus("Enter a valid YouTube URL or 11-character ID.", false);
+      if (videos.some(v => v.id === id)) return setStatus("Video already exists in your list.", false);
+      videos.unshift({ id, title: `Custom video (${id})`, note: "Added manually" });
+      saveVideos(videos);
+      render(videos);
+      input.value = "";
+      setStatus("Video added successfully.");
+    }
+
+    addBtn.addEventListener("click", addCurrentInput);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addCurrentInput();
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      videos.splice(0, videos.length, ...DEFAULT_VIDEOS.map(v => ({ ...v })));
+      saveVideos(videos);
+      render(videos);
+      setStatus("Reset to default featured videos.");
+    });
+
+    openAllBtn.addEventListener("click", () => {
+      videos.forEach((v) => window.open(`https://www.youtube.com/watch?v=${v.id}`, "_blank", "noopener"));
+      setStatus(`Opened ${videos.length} video link(s) in new tabs.`);
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        setStatus("Page link copied to clipboard.");
+      } catch (_) {
+        setStatus("Clipboard unavailable in this browser context.", false);
+      }
+    });
+
+    exportBtn.addEventListener("click", () => {
+      jsonArea.value = JSON.stringify(videos, null, 2);
+      setStatus("Video list exported to text box.");
+    });
+
+    importBtn.addEventListener("click", () => {
+      try {
+        const parsed = JSON.parse(jsonArea.value);
+        if (!Array.isArray(parsed)) throw new Error("Not an array");
+        const normalized = parsed.map(sanitizeVideo).filter(Boolean);
+        if (!normalized.length) throw new Error("No valid videos found");
+
+        videos.splice(0, videos.length, ...normalized);
+        saveVideos(videos);
+        render(videos);
+        setStatus(`Imported ${normalized.length} video(s).`);
+      } catch (err) {
+        setStatus(`Import failed: ${err.message}.`, false);
+      }
+    });
+
+    clearJsonBtn.addEventListener("click", () => {
+      jsonArea.value = "";
+      setStatus("Text box cleared.");
+    });
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem(themeKey, theme);
+    }
+
+    const savedTheme = localStorage.getItem(themeKey);
+    if (savedTheme === "light" || savedTheme === "dark") {
+      applyTheme(savedTheme);
+    } else {
+      applyTheme(window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+  </script>
+</body>
+</html>
