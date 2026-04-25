@@ -1,0 +1,29 @@
+//@version=6
+indicator("ZCT Momentum Filter", overlay=false, shorttitle="ZCT MF")
+
+// --- Inputs ---
+fastLen = input.int(60,  "Fast EMA Length", minval=1, group="EMA Settings")
+slowLen = input.int(240, "Slow EMA Length", minval=1, group="EMA Settings")
+
+// --- Dollar-Denominated Open Interest ---
+// Fetches raw OI contracts then multiplies by close price
+oiRaw    = request.security(syminfo.tickerid + "_OI", timeframe.period, close)
+oiDollar = oiRaw * close
+
+// --- EMAs of Dollar OI ---
+fastEMA = ta.ema(oiDollar, fastLen)
+slowEMA = ta.ema(oiDollar, slowLen)
+
+// --- Plots ---
+plot(oiDollar, "Open Interest ($)", color=color.yellow, linewidth=1)
+
+fastPlot = plot(fastEMA, "EMA " + str.tostring(fastLen), color=color.blue,  linewidth=2)
+slowPlot = plot(slowEMA, "EMA " + str.tostring(slowLen), color=color.green, linewidth=2)
+
+// --- Fill Between EMAs ---
+// Green when fast above slow (bullish OI momentum), red when fast below slow
+fillColor = fastEMA > slowEMA
+     ? color.new(color.green, 85)
+     : color.new(color.red,   85)
+
+fill(fastPlot, slowPlot, color=fillColor, title="EMA Fill")
