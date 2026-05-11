@@ -1,0 +1,100 @@
+{
+  "projectName": "Tones-and-Bones",
+  "version": "1.0.0",
+  "description": "Luxury Sales and Marketing Automation",
+
+  "env": {
+    "MEMORY_DIR": ".claude/MEMORY",
+    "COMMANDS_DIR": ".claude/commands",
+    "HOOKS_DIR": ".claude/hooks",
+    "MAX_TOKENS": "8000",
+    "BRAND_VOICE": "elevated, precise, warm"
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git fetch*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(ls*)",
+      "Bash(find*)",
+      "Bash(grep*)",
+      "Bash(cat*)",
+      "Bash(echo*)",
+      "Bash(mkdir*)",
+      "Bash(cp*)",
+      "Bash(mv*)",
+      "Bash(pwd)",
+      "Bash(date)",
+      "Bash(wc*)",
+      "Bash(sort*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(node*)",
+      "Bash(npm*)",
+      "Bash(npx*)",
+      "Bash(bun*)",
+      "Bash(python3*)",
+      "Bash(jq*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(sudo rm*)",
+      "Bash(curl * | bash*)",
+      "Bash(wget * | sh*)"
+    ]
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-bash-safety.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-end.sh"
+          }
+        ]
+      }
+    ]
+  },
+
+  "spinnerVerbs": [
+    "Crafting",
+    "Curating",
+    "Distilling",
+    "Elevating",
+    "Refining",
+    "Architecting",
+    "Positioning",
+    "Composing",
+    "Tailoring",
+    "Polishing",
+    "Calibrating",
+    "Orchestrating",
+    "Articulating",
+    "Sculpting",
+    "Illuminating"
+  ]
+}
