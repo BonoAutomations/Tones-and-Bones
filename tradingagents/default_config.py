@@ -17,6 +17,7 @@ _ENV_OVERRIDES = {
     "TRADINGAGENTS_MAX_RISK_ROUNDS":      "max_risk_discuss_rounds",
     "TRADINGAGENTS_CHECKPOINT_ENABLED":   "checkpoint_enabled",
     "TRADINGAGENTS_BENCHMARK_TICKER":     "benchmark_ticker",
+    "TRADINGAGENTS_ALPACA_POSITION_PCT":  "alpaca_position_pct",
 }
 
 
@@ -102,6 +103,12 @@ DEFAULT_CONFIG = _apply_env_overrides({
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
     },
+    # Alpaca broker integration
+    # alpaca_position_pct: fraction of portfolio equity to deploy per Buy signal
+    # (e.g. 0.05 = 5 %).  Overridden by the position_pct argument to
+    # TradeExecutor.run() or the --position-pct CLI flag.
+    "alpaca_position_pct": 0.05,
+
     # Benchmark for alpha calculation in the reflection layer.
     # ``benchmark_ticker`` (when set) overrides the suffix map for all
     # tickers; leave it None to use ``benchmark_map`` for auto-detection
